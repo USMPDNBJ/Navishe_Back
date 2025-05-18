@@ -176,7 +176,20 @@ Resources:
             Type: Api
             Properties:
               Path: /sensores
-              Method: GET       
+              Method: GET
+
+  conexionDBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/lambda_conexion_db_data_panales.handler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: LAMBDA PARA OBTENER DATA De IOT CORE
+
+
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
