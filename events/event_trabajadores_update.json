@@ -1,0 +1,6 @@
+{
+  "body": "{ \"correo\": \"nuevo@mail.com\", \"nombre\": \"Juan Actualizado\", \"contrasena\": \"12345678\", \"rol\": \"admin\", \"status\": \"1\", \"dni\": \"87654321\" }",
+  "pathParameters": {
+    "id": "12"
+  }
+}

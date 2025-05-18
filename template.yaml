@@ -1,0 +1,206 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  api-app
+Transform:
+- AWS::Serverless-2016-10-31
+Resources:
+
+  LoginTrabajadorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: LAMBDA PARA LOGIN DE TRABAJADORES
+      Handler: src/handlers/lambda_trabajadores_login.handler
+      Events:
+        LoginTrabajador:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: POST
+
+
+  colmFindAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/lambda_colm_find_all.handler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: LAMBDA PARA VER COLMENAS
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /colmena
+            Method: GET 
+      
+  trabajadorCreateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/lambda_trabajadores_create.handler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: LAMBDA PARA CREAR TRABAJADORES
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /trabajador
+            Method: POST
+
+
+  trabajadorDeleteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/lambda_trabajadores_delete.handler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: LAMBDA PARA ELIMINAR TRABAJADORES
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /trabajador/{id}
+            Method: DELETE
+
+  GetTrabajadoresFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        Runtime: nodejs22.x
+        Architectures:
+          - x86_64
+        MemorySize: 128
+        Timeout: 100
+        Description: LAMBDA PARA EL FIND_ALL DE TRABAJADORES
+        Handler: src/handlers/lambda_trabajadores_find_all.handler
+        Events:
+          GetTrabajadores:
+            Type: Api
+            Properties:
+              Path: /trabajador
+              Method: GET
+
+
+  UpdateTrabajadorFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        Runtime: nodejs22.x
+        Architectures:
+          - x86_64
+        MemorySize: 128
+        Timeout: 100
+        Description: LAMBDA PARA EL UPDATE DE TRABAJADORES
+        Handler: src/handlers/lambda_trabajadores_update.handler
+        Events:
+          UpdateTrabajador:
+            Type: Api
+            Properties:
+              Path: /trabajador/{id}
+              Method: PUT
+
+  colmCreateFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: src/handlers/lambda_colm_create.handler
+        Runtime: nodejs22.x
+        Architectures:      
+          - x86_64
+        MemorySize: 128
+        Timeout: 100
+        Description: LAMBDA PARA CREAR COLMENAS
+        Events:
+          Api:
+            Type: Api
+            Properties:
+              Path: /colmena
+              Method: POST
+            
+  colmDeleteFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: src/handlers/lambda_colm_delete.handler
+        Runtime: nodejs22.x
+        Architectures:
+          - x86_64
+        MemorySize: 128
+        Timeout: 100
+        Description: LAMBDA PARA ELIMINAR COLMENAS
+        Events:
+          Api:
+            Type: Api
+            Properties:
+              Path: /colmena/{id}
+              Method: DELETE
+          
+  colmUpdateFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: src/handlers/lambda_colm_update.handler
+        Runtime: nodejs22.x
+        Architectures:
+          - x86_64
+        MemorySize: 128
+        Timeout: 100
+        Description: LAMBDA PARA ACTUALIZAR COLMENAS
+        Events:
+          Api:
+            Type: Api
+            Properties:
+              Path: /colmena/{id}
+              Method: PUT
+
+  colmSensoresFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: src/handlers/lambda_colm_sensores.handler
+        Runtime: nodejs22.x
+        Architectures:
+          - x86_64
+        MemorySize: 128
+        Timeout: 100
+        Description: LAMBDA PARA OBTENER DATA SENSORES
+        Events:
+          Api:
+            Type: Api
+            Properties:
+              Path: /sensores
+              Method: GET       
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+Outputs:
+  WebEndpoint:
+    Description: API Gateway endpoint URL for Prod stage
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+# # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Tracing: Active
+    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
+    LoggingConfig:
+      LogFormat: JSON
+  Api:
+    TracingEnabled: true
