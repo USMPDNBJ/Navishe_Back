@@ -61,6 +61,24 @@ Resources:
             Path: /trabajador/{id}
             Method: DELETE
 
+  LoginTrabajadorFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+      Runtime: nodejs20.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      CodeUri: src/functions/LoginTrabajadorFunction
+      Timeout: 100
+      Description: LAMBDA PARA LOGIN DE TRABAJADORES
+      Handler: src/handlers/lambda_trabajadores_login.handler
+      Events:
+        LoginTrabajador:
+          Type: Api
+          Properties:
+            Path: /trabajador
+            Method: post
+
   GetTrabajadoresFunction:
       Type: AWS::Serverless::Function
       Properties:
@@ -68,10 +86,10 @@ Resources:
         Architectures:
           - x86_64
         MemorySize: 128
-        CodeUri: src/handlers/
+        CodeUri: src/functions/GetTrabajadoresFunction
         Timeout: 100
         Description: LAMBDA PARA EL FIND_ALL DE TRABAJADORES
-        Handler: src/handlers/lambda_trabajadores_find_all.handler
+        Handler: lambda_trabajadores_find_all.handler
         Events:
           GetTrabajadores:
             Type: Api
@@ -87,7 +105,7 @@ Resources:
         Architectures:
           - x86_64
         MemorySize: 128
-        CodeUri: src/handlers/
+        CodeUri: src/functions/UpdateTrabajadorFunction
         Timeout: 100
         Description: LAMBDA PARA EL UPDATE DE TRABAJADORES
         Handler: src/handlers/lambda_trabajadores_update.handler
