@@ -1,0 +1,4 @@
+{
+  "body": "{\"contrasena\": \"password123\", \"rol\": \"ADMIN\", \"correo\": \"john.doe@example.com\", \"nombre\": \"John Doe\", \"dni\": \"12346678\"}",
+  "httpMethod": "POST"
+}
