@@ -155,9 +155,9 @@ Resources:
   colmSensoresFunction:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: src/handlers/lambda_colm_sensores.handler
+        Handler: lambda_colm_sensores.handler
         Runtime: nodejs22.x
-        CodeUri: src/handlers/
+        CodeUri: src/functions/colmSensoresFunction
         Architectures:
           - x86_64
         MemorySize: 128
