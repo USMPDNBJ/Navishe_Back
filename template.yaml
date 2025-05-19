@@ -5,17 +5,34 @@ Transform:
 - AWS::Serverless-2016-10-31
 Resources:
 
-
-  colmFindAllFunction:
+  LoginTrabajadorFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/lambda_colm_find_all.handler
       Runtime: nodejs22.x
       Architectures:
         - x86_64
       MemorySize: 128
       Timeout: 100
-      CodeUri: src/handlers/
+      Description: LAMBDA PARA LOGIN DE TRABAJADORES
+      Handler: src/handlers/lambda_trabajadores_login.handler
+      Events:
+        LoginTrabajador:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: POST
+
+
+  colmFindAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_colm_find_all.handler
+      codeUri: src/functions/colmFindAllFunction
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
       Description: LAMBDA PARA VER COLMENAS
       Events:
         Api:
@@ -27,12 +44,12 @@ Resources:
   trabajadorCreateFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/lambda_trabajadores_create.handler
+      Handler: lambda_trabajadores_create.handler
+      codeUri: src/functions/trabajadorCreateFunction
       Runtime: nodejs22.x
       Architectures:
         - x86_64
       MemorySize: 128
-      CodeUri: src/handlers/
       Timeout: 100
       Description: LAMBDA PARA CREAR TRABAJADORES
       Events:
@@ -46,13 +63,13 @@ Resources:
   trabajadorDeleteFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/lambda_trabajadores_delete.handler
+      Handler: lambda_trabajadores_delete.handler
+      codeUri: src/functions/trabajadorDeleteFunction
       Runtime: nodejs22.x
       Architectures:
         - x86_64
       MemorySize: 128
       Timeout: 100
-      CodeUri: src/handlers/
       Description: LAMBDA PARA ELIMINAR TRABAJADORES
       Events:
         Api:
@@ -68,7 +85,6 @@ Resources:
         Architectures:
           - x86_64
         MemorySize: 128
-        CodeUri: src/handlers/
         Timeout: 100
         Description: LAMBDA PARA EL FIND_ALL DE TRABAJADORES
         Handler: src/handlers/lambda_trabajadores_find_all.handler
@@ -87,7 +103,6 @@ Resources:
         Architectures:
           - x86_64
         MemorySize: 128
-        CodeUri: src/handlers/
         Timeout: 100
         Description: LAMBDA PARA EL UPDATE DE TRABAJADORES
         Handler: src/handlers/lambda_trabajadores_update.handler
@@ -103,7 +118,6 @@ Resources:
       Properties:
         Handler: src/handlers/lambda_colm_create.handler
         Runtime: nodejs22.x
-        CodeUri: src/handlers/
         Architectures:      
           - x86_64
         MemorySize: 128
@@ -121,7 +135,6 @@ Resources:
       Properties:
         Handler: src/handlers/lambda_colm_delete.handler
         Runtime: nodejs22.x
-        CodeUri: src/handlers/
         Architectures:
           - x86_64
         MemorySize: 128
@@ -139,7 +152,6 @@ Resources:
       Properties:
         Handler: src/handlers/lambda_colm_update.handler
         Runtime: nodejs22.x
-        CodeUri: src/handlers/
         Architectures:
           - x86_64
         MemorySize: 128
@@ -157,7 +169,6 @@ Resources:
       Properties:
         Handler: src/handlers/lambda_colm_sensores.handler
         Runtime: nodejs22.x
-        CodeUri: src/handlers/
         Architectures:
           - x86_64
         MemorySize: 128
