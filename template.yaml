@@ -184,7 +184,8 @@ Resources:
   conexionDBFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/lambda_conexion_db_data_panales.handler
+      Handler: lambda_conexion_db_data_panales.handler
+      CodeUri: src/functions/conexionDBFunction/
       Runtime: nodejs22.x
       Architectures:
         - x86_64
