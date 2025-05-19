@@ -11,7 +11,7 @@ const dbConfig = {
   },
 };
 
-export const lambdaHandler = async (event, context) => {
+export const handler = async (event, context) => {
   let pool;
   try {
     // Parse the event body

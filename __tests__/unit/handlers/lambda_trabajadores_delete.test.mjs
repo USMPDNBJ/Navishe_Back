@@ -19,9 +19,9 @@ jest.unstable_mockModule('mssql', () => ({
 }));
 
 // ⚠️ Importar la lambda DESPUÉS del mock
-const { lambdaHandler } = await import('../../../src/functions/trabajadorDeleteFunction/lambda_trabajadores_delete.mjs'); // Ajusta ruta si es necesario
+const { handler } = await import('../../../src/functions/trabajadorDeleteFunction/lambda_trabajadores_delete.mjs'); // Ajusta ruta si es necesario
 
-describe('lambdaHandler - lambda_trabajadores_delete', () => {
+describe('handler - lambda_trabajadores_delete', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -38,7 +38,7 @@ describe('lambdaHandler - lambda_trabajadores_delete', () => {
       body: JSON.stringify({ id_trabajador: 123 }),
     };
 
-    const response = await lambdaHandler(event);
+    const response = await handler(event);
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
@@ -57,7 +57,7 @@ describe('lambdaHandler - lambda_trabajadores_delete', () => {
       body: JSON.stringify({ id_trabajador: 999 }),
     };
 
-    const response = await lambdaHandler(event);
+    const response = await handler(event);
 
     expect(response.statusCode).toBe(404);
     const body = JSON.parse(response.body);
@@ -69,7 +69,7 @@ describe('lambdaHandler - lambda_trabajadores_delete', () => {
       body: JSON.stringify({}),
     };
 
-    const response = await lambdaHandler(event);
+    const response = await handler(event);
 
     expect(response.statusCode).toBe(400);
     const body = JSON.parse(response.body);
@@ -83,7 +83,7 @@ describe('lambdaHandler - lambda_trabajadores_delete', () => {
       body: JSON.stringify({ id_trabajador: 123 }),
     };
 
-    const response = await lambdaHandler(event);
+    const response = await handler(event);
 
     expect(response.statusCode).toBe(500);
     const body = JSON.parse(response.body);
