@@ -21,7 +21,7 @@ jest.mock('mssql', () => {
 
 const sqlModule = await import('mssql');
 const sql = sqlModule.default;
-const { handler } = await import('../../../src/handlers/lambda_colm_update.mjs');
+const { handler } = await import('../../../src/handlers/colmUpdateFunction/lambda_colm_update.mjs');
 
 describe('handler', () => {
   beforeEach(() => {

@@ -23,7 +23,7 @@ jest.unstable_mockModule('mssql', () => ({
 
 
 import sql from 'mssql';
-import { handler } from '../../../src/handlers/lambda_colm_create.mjs';
+import { handler } from '../../../src/handlers/colmCreateFunction/lambda_colm_create.mjs';
 
 
 

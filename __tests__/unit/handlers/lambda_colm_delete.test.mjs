@@ -23,7 +23,7 @@ jest.unstable_mockModule('mssql', () => {
 });
 
 const sql = await import('mssql');
-const { handler } = await import('../../../src/handlers/lambda_colm_delete.mjs');
+const { handler } = await import('../../../src/handlers/colmDeleteFunction/lambda_colm_delete.mjs');
 
 
 
