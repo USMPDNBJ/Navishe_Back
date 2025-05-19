@@ -1,14 +1,13 @@
-// src/functions/colmSensoresFunction/lambda_colm_sensores.mjs
 import { InfluxDB } from '@influxdata/influxdb-client';
 
-const INFLUXDB_HOST = '34.233.48.228';
-const INFLUXDB_PORT = 8086;
-const INFLUXDB_TOKEN = 'U9lAxx7_eNCKiY4NGz_UfNlpVKlHpud6mURWiuaunQT-cVUi1gBtDhNYf47HgsJyFcyJKK_4yL45WC-My42ypQ==';
-const INFLUXDB_BUCKET = 'panales_bucket';
-const INFLUXDB_ORG = '213aac21b43b23ac';
+const INFLUXDB_TOKEN = process.env.INFLUX_TOKEN || 'U9lAxx7_eNCKiY4NGz_UfNlpVKlHpud6mURWiuaunQT-cVUi1gBtDhNYf47HgsJyFcyJKK_4yL45WC-My42ypQ==';
+const INFLUXDB_BUCKET = process.env.INFLUX_BUCKET || 'panales_bucket';
+const INFLUXDB_ORG = process.env.INFLUX_ORG || '213aac21b43b23ac';
+const INFLUXDB_URL = process.env.INFLUX_URL || 'http://34.233.48.228:8086';
+
 
 const influxdb = new InfluxDB({
-  url: `http://${INFLUXDB_HOST}:${INFLUXDB_PORT}`,
+  url: INFLUXDB_URL,
   token: INFLUXDB_TOKEN,
 });
 
@@ -17,7 +16,7 @@ const queryApi = influxdb.getQueryApi(INFLUXDB_ORG);
 export const handler = async (event) => {
   const query = `
     from(bucket: "${INFLUXDB_BUCKET}")
-      |> range(start: -108h)
+      |> range(start: -100h)
       |> filter(fn: (r) => r["_field"] == "humedad" or 
                           r["_field"] == "temperatura" or 
                           r["_field"] == "longitud" or 
@@ -31,9 +30,25 @@ export const handler = async (event) => {
 
   try {
     console.log("Iniciando consulta a InfluxDB...");
-
+    try {
+      const pingResult = await influxdb.ping(5000); // Timeout de 5 segundos
+      if (!pingResult || pingResult.status !== 'ready') {
+        throw new Error('InfluxDB no está disponible');
+      }
+      console.log('Conexión con InfluxDB verificada:', pingResult); // Depuración
+    } catch (pingError) {
+      console.error('Error de conexión con InfluxDB:', pingError.message); // Depuración
+      return {
+        statusCode: 503,
+        body: JSON.stringify({
+          message: 'Error de conexión con InfluxDB.',
+          details: pingError.message,
+        }),
+      };
+    }
     const result = await new Promise((resolve, reject) => {
       const data = [];
+
       queryApi.queryRows(query, {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
@@ -49,21 +64,40 @@ export const handler = async (event) => {
           resolve(data);
         },
       });
-      console.log('queryRows called'); // De
     });
-
     if (!result || result.length === 0) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ message: 'No se encontraron datos.' })
+        body: JSON.stringify({ message: 'No se encontraron datos.' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+    if (result.length === 0) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify([{
+          id_colmena: 0,
+          nombre: "0",
+          humedad: null,
+          temperatura: null,
+          peso: null,
+          longitud: null,
+          latitud: null
+        }])
       };
     }
 
     const colmenasData = {};
+
     result.forEach(row => {
       const colmena = row.colmena;
       const field = row._field;
       const value = row._value;
+
+      if (typeof colmena !== 'string') {
+        console.warn('Valor colmena no válido:', colmena);
+        return;
+      }
 
       if (!colmenasData[colmena]) {
         colmenasData[colmena] = {
@@ -85,37 +119,53 @@ export const handler = async (event) => {
         }
       }
 
-      switch (field) {
-        case 'humedad':
-          colmenasData[colmena].humedad = value;
-          break;
-        case 'temperatura':
-          colmenasData[colmena].temperatura = value;
-          break;
-        case 'peso':
-          colmenasData[colmena].peso = value;
-          break;
-        case 'longitud':
-          colmenasData[colmena].longitud = value;
-          break;
-        case 'latitud':
-          colmenasData[colmena].latitud = value;
-          break;
+      if (typeof field === 'string') {
+        switch (field) {
+          case 'humedad':
+            colmenasData[colmena].humedad = value;
+            break;
+          case 'temperatura':
+            colmenasData[colmena].temperatura = value;
+            break;
+          case 'peso':
+            colmenasData[colmena].peso = value;
+            break;
+          case 'longitud':
+            colmenasData[colmena].longitud = value;
+            break;
+          case 'latitud':
+            colmenasData[colmena].latitud = value;
+            break;
+        }
+      } else {
+        console.warn('Campo _field no válido:', field);
       }
     });
 
     const formattedData = Object.values(colmenasData);
+
     console.log('Datos formateados:', formattedData);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(formattedData)
+      body: JSON.stringify(formattedData), // Asegúrate que formattedData sea un objeto/array
+      headers: {
+        'Content-Type': 'application/json'
+      }
     };
+
   } catch (error) {
-    console.error('Error en el handler:', error);
+    console.error('Error en la ejecución de Lambda:', error);
+    // Otros errores
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'Error al consultar InfluxDB.' })
+      body: JSON.stringify({
+        message: 'Error al consultar InfluxDB.',
+        details: error.message
+      }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
     };
   }
 };
