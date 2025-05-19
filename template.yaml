@@ -137,7 +137,8 @@ Resources:
   colmCreateFunction:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: src/handlers/lambda_colm_create.handler
+        Handler: lambda_colm_update.handler
+        codUri: src/functions/colmCreateFunction
         Runtime: nodejs22.x
         Architectures:      
           - x86_64
@@ -154,7 +155,8 @@ Resources:
   colmDeleteFunction:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: src/handlers/lambda_colm_delete.handler
+        Handler: lambda_colm_delete.handler
+        codUri: src/functions/colmDeleteFunction
         Runtime: nodejs22.x
         Architectures:
           - x86_64
@@ -171,7 +173,8 @@ Resources:
   colmUpdateFunction:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: src/handlers/lambda_colm_update.handler
+        Handler: lambda_colm_update.handler
+        codUri: src/functions/colmUpdateFunction
         Runtime: nodejs22.x
         Architectures:
           - x86_64
