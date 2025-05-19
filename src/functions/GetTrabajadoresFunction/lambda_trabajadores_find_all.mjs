@@ -14,6 +14,18 @@ const dbConfig = {
 export const handler = async (event) => {
   console.log("Método:", event.httpMethod);
 
+  // Validar que el método sea GET
+  if (event.httpMethod !== 'GET') {
+    return {
+      statusCode: 405,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      },
+      body: JSON.stringify({ message: 'Método no permitido' })
+    };
+  }
 
   try {
     const pool = await sql.connect(dbConfig);
@@ -25,9 +37,9 @@ export const handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
-        "Access-Control-Allow-Origin": "*",  // Habilitar CORS
-        "Access-Control-Allow-Methods": "GET, OPTIONS", // Métodos permitidos
-        "Access-Control-Allow-Headers": "Content-Type, Authorization" // Encabezados permitidos
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
       },
       body: JSON.stringify(result.recordset)
     };
@@ -36,6 +48,11 @@ export const handler = async (event) => {
     console.error('Error al obtener trabajadores:', error);
     return {
       statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      },
       body: JSON.stringify({ 
         message: 'Error al obtener trabajadores', 
         error: error.message 
