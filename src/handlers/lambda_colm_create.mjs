@@ -1,71 +1,76 @@
 import sql from 'mssql';
 
+const dbConfig = {
+  server: '161.132.55.86',
+  user: 'NVS',
+  password: '@Vishe1234',
+  database: 'BD_NA_VISHE_PRUEBAS',
+  options: {
+    encrypt: true,
+    trustServerCertificate: true,
+  },
+};
+
+const createResponse = (statusCode, headers, body = {}) => ({
+  statusCode,
+  headers: {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    ...headers
+  },
+  body: JSON.stringify(body)
+});
+
 export const handler = async (event) => {
+  if (!event) {
+    return createResponse(400, { message: 'No se recibieron datos para crear la colmena.' });
+  }
+
+  const { nombre, fecha_instalacion, imagen_url, id_sensores, longitud, latitud } = event;
+
+  if (!nombre || !fecha_instalacion || !id_sensores || !imagen_url || longitud === undefined || latitud === undefined) {
+    return createResponse(400, { message: 'Faltan campos obligatorios en los datos de la colmena.' });
+  }
+
+  let pool;
   try {
-    // Configuración de conexión a MSSQL
-    const dbConfig = {
-      server: '161.132.55.86',
-      user: 'NVS',
-      password: '@Vishe1234',
-      database: 'BD_NA_VISHE_PRUEBAS',
-      options: {
-        encrypt: true,
-        trustServerCertificate: true,
-      },
-    };
+    pool = await sql.connect(dbConfig);
 
-    // Obtener parámetros del evento
-    const body = JSON.parse(event.body || '{}');
-    const { nombre, fecha_instalacion, imagen_url, id_sensores } = body;
-
-    // Validar parámetros requeridos
-    if (!nombre || !fecha_instalacion) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'nombre y fecha_instalacion son obligatorios' }),
-      };
-    }
-
-    // Conectar a la base de datos
-    const pool = await sql.connect(dbConfig);
-
-    // Insertar nueva colmena (sin id_colmena, ya que es automático)
-    const query = `
-      INSERT INTO t_colmena (nombre, fecha_instalacion, imagen_url, id_sensores)
-      OUTPUT INSERTED.id_colmena
-      VALUES (@nombre, @fecha_instalacion, @imagen_url, @id_sensores)
+    const insertQuery = `
+      INSERT INTO t_colmena (nombre, fecha_instalacion, imagen_url, id_sensores, longitud, latitud)
+      OUTPUT inserted.*
+      VALUES (@nombre, @fecha_instalacion, @imagen_url, @id_sensores, @longitud, @latitud);
     `;
-    const request = pool.request()
-      .input('nombre', sql.VarChar(100), nombre)
-      .input('fecha_instalacion', sql.Date, fecha_instalacion)
-      .input('imagen_url', sql.VarChar(255), imagen_url)
-      .input('id_sensores', sql.VarChar(100), id_sensores);
+    const request = pool.request();
+    const result = await pool.request()
+      .input('nombre', sql.NVarChar, nombre)
+      .input('fecha_instalacion', sql.DateTime, fecha_instalacion)
+      .input('imagen_url', sql.NVarChar, imagen_url)
+      .input('id_sensores', sql.NVarChar, id_sensores)
+      .input('longitud', sql.Float, longitud)
+      .input('latitud', sql.Float, latitud)
+      .query(insertQuery);
+    return createResponse(200, {}, {
+      message: 'Colmena creada exitosamente',
+      data: result.recordset
+    }
+    );
 
-    const result = await request.query(query);
 
-    // Obtener el id_colmena generado automáticamente
-    const id_colmena = result.recordset[0].id_colmena;
-
-    // Cerrar conexión
-    await pool.close();
-
-    return {
-      statusCode: 201,
-      headers: {
-        "Access-Control-Allow-Origin": "*",  // Habilitar CORS
-        "Access-Control-Allow-Methods": "POST, OPTIONS", // Métodos permitidos
-        "Access-Control-Allow-Headers": "Content-Type, Authorization" // Encabezados permitidos
-      },
-      body: JSON.stringify({
-        message: 'Colmena creada exitosamente',
-        id_colmena,
-      }),
-    };
-  } catch (error) {
-    console.error('Error:', error);
+  } catch (err) {
+    console.error('ERROR EN HANDLER:', err); // 👈 esto imprime el verdadero problema
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: `Error: ${error.message}` }),
+      body: JSON.stringify({ error: err.message }) // 👈 nota que antes decía error.message pero deberías capturar "err"
     };
+  } finally {
+    if (pool) {
+      try {
+        await pool.close();
+      } catch (err) {
+        console.err('Error al cerrar la conexión:', err);
+      }
+    }
   }
 };
