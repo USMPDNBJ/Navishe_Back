@@ -1,6 +1,9 @@
-const { handler } = require('../../../src/functions/conexionDBFunction/lambda_conexion_db_data_panales');
+// lambda_conexion_db_data_panales.test.js
+import { jest } from '@jest/globals';
+import { handler } from '../../../src/functions/conexionDBFunction/lambda_conexion_db.mjs';
 
-jest.mock('@influxdata/influxdb-client', () => {
+// Mockear el módulo
+jest.unstable_mockModule('@influxdata/influxdb-client', () => {
     const mockWriteApi = {
         writePoint: jest.fn(),
         close: jest.fn().mockResolvedValue(undefined),
@@ -10,13 +13,11 @@ jest.mock('@influxdata/influxdb-client', () => {
         InfluxDB: jest.fn(() => ({
             getWriteApi: jest.fn(() => mockWriteApi)
         })),
-        Point: jest.fn().mockImplementation(() => {
-            return {
-                tag: jest.fn().mockReturnThis(),
-                floatField: jest.fn().mockReturnThis(),
-                timestamp: jest.fn().mockReturnThis()
-            };
-        })
+        Point: jest.fn(() => ({
+            tag: jest.fn().mockReturnThis(),
+            floatField: jest.fn().mockReturnThis(),
+            timestamp: jest.fn().mockReturnThis()
+        }))
     };
 });
 
