@@ -21,6 +21,18 @@ exports.handler = async (event) => {
         const colmenaId = event.topic.split('/')[1]
 
 
+        // ✅ Validaciones básicas
+        if (isNaN(humedad)) {
+            throw new Error("Valor de humedad inválido");
+        }
+        if (isNaN(temperatura)) {
+            throw new Error("Valor de temperatura inválido");
+        }
+        if (isNaN(peso)) {
+            throw new Error("Valor de peso inválido");
+        }
+
+
         const point = new Point('colmena_data')
             .tag('id_colmena', colmenaId)
             .floatField('humedad', humedad)
