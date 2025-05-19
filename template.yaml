@@ -71,7 +71,7 @@ Resources:
       CodeUri: src/functions/LoginTrabajadorFunction
       Timeout: 100
       Description: LAMBDA PARA LOGIN DE TRABAJADORES
-      Handler: src/handlers/lambda_trabajadores_login.handler
+      Handler: lambda_trabajadores_login.handler
       Events:
         LoginTrabajador:
           Type: Api
@@ -108,7 +108,7 @@ Resources:
         CodeUri: src/functions/UpdateTrabajadorFunction
         Timeout: 100
         Description: LAMBDA PARA EL UPDATE DE TRABAJADORES
-        Handler: src/handlers/lambda_trabajadores_update.handler
+        Handler: lambda_trabajadores_update.handler
         Events:
           UpdateTrabajador:
             Type: Api
