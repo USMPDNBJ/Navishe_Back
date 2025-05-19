@@ -156,6 +156,21 @@ export const handler = async (event) => {
 
   } catch (error) {
     console.error('Error en la ejecución de Lambda:', error);
+
+    // Manejo específico de errores de conexión
+    if (error.message.includes('ECONNREFUSED') || error.message.includes('Connection failed')) {
+      return {
+        statusCode: 503, // Service Unavailable
+        body: JSON.stringify({
+          message: 'Error de conexión con InfluxDB.',
+          details: error.message
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
+    }
+
     // Otros errores
     return {
       statusCode: 500,

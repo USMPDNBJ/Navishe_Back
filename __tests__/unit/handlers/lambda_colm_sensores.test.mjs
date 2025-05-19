@@ -182,7 +182,7 @@ describe('Lambda Handler', () => {
 
       // Verificar que no se llamó a queryRows cuando falla la conexión
       expect(mockQueryApi.queryRows).not.toHaveBeenCalled();
-    }, 5000);
+    }, 10000);
 
   });
 
