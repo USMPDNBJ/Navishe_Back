@@ -1,88 +1,65 @@
-  import * as sql from 'mssql';
+import mysql from 'mysql2/promise';
 
-  export const handler = async (event) => {
-    try {
-      // Verificar httpMethod (opcional, ajusta según el método deseado)
+export const handler = async (event) => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+  };
 
-      // Configuración de conexión a MSSQL
-      const dbConfig = {
-        server: '161.132.55.86',
-        user: 'NVS',
-        password: '@Vishe1234',
-        database: 'BD_NA_VISHE_PRUEBAS',
-        options: {
-          encrypt: true,
-          trustServerCertificate: true,
-        },
-      };
+  try {
+    // Obtener id_colmena del pathParameters (ajusta según cómo recibas el evento)
+    const id_colmena = event.pathParameters?.id;
 
-      // Obtener id_colmena del evento
-      const id_colmena = event.pathParameters?.id;
-
-      // Validar parámetro requerido
-      if (!id_colmena) {
-        return {
-          statusCode: 400,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization"
-          },
-          body: JSON.stringify({ error: 'id_colmena es obligatorio' }),
-        };
-      }
-
-      // Conectar a la base de datos
-      const pool = await sql.connect(dbConfig);
-
-      // Eliminar colmena por id_colmena
-      const query = `
-        DELETE FROM t_colmena
-        WHERE id_colmena = @id_colmena
-      `;
-      const request = pool.request()
-        .input('id_colmena', sql.Int, id_colmena);
-
-      const result = await request.query(query);
-
-      // Verificar si se eliminó alguna fila
-      if (result.rowsAffected[0] === 0) {
-        await pool.close();
-        return {
-          statusCode: 404,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization"
-          },
-          body: JSON.stringify({ error: 'Colmena no encontrada' }),
-        };
-      }
-
-      // Cerrar conexión
-      await pool.close();
+    // Validar parámetro requerido
+    if (!id_colmena) {
       return {
-        statusCode: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        },
-        body: JSON.stringify({
-          message: 'Colmena eliminada exitosamente',
-          id_colmena,
-        }),
-      };
-    } catch (error) {
-      console.error('Error:', error);
-      return {
-        statusCode: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        },
-        body: JSON.stringify({ error: `Error: ${error.message}` }),
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'id_colmena es obligatorio' }),
       };
     }
-  };
+
+    // Configuración conexión MySQL
+    const dbConfig = {
+      host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
+      user: 'admin',
+      password: 'Vishe-1234',
+      database: 'bd-na-vishe-test',
+    };
+
+    const connection = await mysql.createConnection(dbConfig);
+
+    // Ejecutar DELETE parametrizado
+    const [result] = await connection.execute(
+      'DELETE FROM t_colmena WHERE id_colmena = ?',
+      [id_colmena]
+    );
+
+    await connection.end();
+
+    if (result.affectedRows === 0) {
+      return {
+        statusCode: 404,
+        headers,
+        body: JSON.stringify({ error: 'Colmena no encontrada' }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        message: 'Colmena eliminada exitosamente',
+        id_colmena,
+      }),
+    };
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: `Error: ${error.message}` }),
+    };
+  }
+};
