@@ -46,7 +46,7 @@ export const handler = async (event) => {
         body: JSON.stringify({ error: 'Colmena no encontrada' }),
       };
     }
-    const result2 = await database.deleteItem(id);
+     const result2 = await database.deleteItem(id); 
     return {
       statusCode: 200,
       headers,
