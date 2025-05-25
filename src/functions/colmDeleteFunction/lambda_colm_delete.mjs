@@ -31,6 +31,7 @@ export const handler = async (event) => {
     const connection = await mysql.createConnection(dbConfig);
 
     // Ejecutar DELETE parametrizado
+
     const [result] = await connection.execute(
       'DELETE FROM t_colmena WHERE id_colmena = ?',
       [id_colmena]
@@ -45,7 +46,7 @@ export const handler = async (event) => {
         body: JSON.stringify({ error: 'Colmena no encontrada' }),
       };
     }
-
+    const result2 = await database.deleteItem(id);
     return {
       statusCode: 200,
       headers,
