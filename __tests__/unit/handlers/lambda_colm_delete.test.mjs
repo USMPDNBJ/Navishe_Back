@@ -49,19 +49,19 @@ describe('handler - DELETE colmena (MySQL)', () => {
     mysql.__executeMock.mockResolvedValueOnce([{ affectedRows: 1 }, []]);
 
     const response = await handler({
-      pathParameters: { id: '35' },
+      pathParameters: { id: '150' },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body.message).toBe('Colmena eliminada exitosamente');
-    expect(body.id_colmena).toBe('35');
+    expect(body.id_colmena).toBe('150');
   });
 
   test('retorna 500 en caso de error interno', async () => {
     mysql.__executeMock.mockRejectedValueOnce(new Error('Error de conexión'));
 
-    const response = await handler({ pathParameters: { id: '35' } });
+    const response = await handler({ pathParameters: { id: '149' } });
 
     expect(response.statusCode).toBe(500);
     expect(JSON.parse(response.body).error).toMatch(/Error de conexión/);
