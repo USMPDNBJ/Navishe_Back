@@ -1,20 +1,14 @@
-import sql from 'mssql';
+import mysql from 'mysql2/promise';
+
+const dbConfig = {
+  host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'Vishe-1234',
+  database: 'bd-na-vishe-test',
+};
 
 export const handler = async (event) => {
   try {
-    // Configuración de conexión a MSSQL
-    const dbConfig = {
-      server: '161.132.55.86',
-      user: 'NVS',
-      password: '@Vishe1234',
-      database: 'BD_NA_VISHE_PRUEBAS',
-      options: {
-        encrypt: true,
-        trustServerCertificate: true,
-      },
-    };
-
-    // Obtener id_colmena de pathParameters
     const id_colmena = event.pathParameters?.id;
 
     if (!id_colmena) {
@@ -25,16 +19,7 @@ export const handler = async (event) => {
       };
     }
 
-    let body;
-    try {
-      body = event.body ? JSON.parse(event.body) : {};
-    } catch (parseError) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders(),
-        body: JSON.stringify({ error: 'El cuerpo de la solicitud no es un JSON válido' }),
-      };
-    }
+    let body=event.body;
 
     const { nombre, fecha_instalacion, imagen_url, id_sensores, longitud, latitud } = body;
 
@@ -42,40 +27,34 @@ export const handler = async (event) => {
       return {
         statusCode: 400,
         headers: corsHeaders(),
-        body: JSON.stringify({ error: 'nombre, fecha_instalacion, longitud y latitud son obligatorios' }),
+        body: JSON.stringify({
+          error: 'nombre, fecha_instalacion, longitud y latitud son obligatorios'
+        }),
       };
     }
 
-    const pool = await sql.connect(dbConfig);
+    const connection = await mysql.createConnection(dbConfig);
 
-    const query = `
+    // Ejecutar la actualización
+    const updateQuery = `
       UPDATE t_colmena
-      SET nombre = @nombre,
-          fecha_instalacion = @fecha_instalacion,
-          imagen_url = @imagen_url,
-          id_sensores = @id_sensores,
-          longitud = @longitud,
-          latitud = @latitud
-      WHERE id_colmena = @id_colmena;
-
-      SELECT id_colmena, nombre, fecha_instalacion, imagen_url, id_sensores, longitud, latitud
-      FROM t_colmena
-      WHERE id_colmena = @id_colmena
+      SET nombre = ?, fecha_instalacion = ?, imagen_url = ?, id_sensores = ?, longitud = ?, latitud = ?
+      WHERE id_colmena = ?;
     `;
 
-    const request = pool.request()
-      .input('id_colmena', sql.Int, parseInt(id_colmena))
-      .input('nombre', nombre)
-      .input('fecha_instalacion', sql.DateTime, new Date(fecha_instalacion))
-      .input('imagen_url', imagen_url)
-      .input('id_sensores', id_sensores)
-      .input('longitud', sql.Float, longitud)
-      .input('latitud', sql.Float, latitud);
+    const [updateResult] = await connection.execute(updateQuery, [
+      nombre,
+      fecha_instalacion,
+      imagen_url,
+      id_sensores,
+      longitud,
+      latitud,
+      id_colmena
+    ]);
 
-    const result = await request.query(query);
-
-    if (result.recordset.length === 0) {
-      await pool.close();
+    // Si no se actualizó ninguna fila, no existe el registro
+    if (updateResult.affectedRows === 0) {
+      await connection.end();
       return {
         statusCode: 404,
         headers: corsHeaders(),
@@ -83,16 +62,21 @@ export const handler = async (event) => {
       };
     }
 
-    const updatedColmena = result.recordset[0];
+    // Consultar colmena actualizada
+    const [rows] = await connection.execute(
+      `SELECT id_colmena, nombre, fecha_instalacion, imagen_url, id_sensores, longitud, latitud
+       FROM t_colmena WHERE id_colmena = ?`,
+      [id_colmena]
+    );
 
-    await pool.close();
+    await connection.end();
 
     return {
       statusCode: 200,
       headers: corsHeaders(),
       body: JSON.stringify({
         message: 'Colmena actualizada exitosamente',
-        colmena: updatedColmena,
+        colmena: rows[0],
       }),
     };
   } catch (error) {

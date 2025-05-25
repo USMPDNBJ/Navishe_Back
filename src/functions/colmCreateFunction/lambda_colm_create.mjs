@@ -1,17 +1,13 @@
-import sql from 'mssql';
+import mysql from 'mysql2/promise';
 
 const dbConfig = {
-  server: '161.132.55.86',
-  user: 'NVS',
-  password: '@Vishe1234',
-  database: 'BD_NA_VISHE_PRUEBAS',
-  options: {
-    encrypt: true,
-    trustServerCertificate: true,
-  },
+  host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'Vishe-1234',
+  database: 'bd-na-vishe-test',
 };
 
-const createResponse = (statusCode, headers, body = {}) => ({
+const createResponse = (statusCode, body = {}, headers = {}) => ({
   statusCode,
   headers: {
     'Access-Control-Allow-Origin': '*',
@@ -33,43 +29,46 @@ export const handler = async (event) => {
     return createResponse(400, { message: 'Faltan campos obligatorios en los datos de la colmena.' });
   }
 
-  let pool;
+  let connection;
   try {
-    pool = await sql.connect(dbConfig);
+    connection = await mysql.createConnection(dbConfig);
 
     const insertQuery = `
       INSERT INTO t_colmena (nombre, fecha_instalacion, imagen_url, id_sensores, longitud, latitud)
-      OUTPUT inserted.*
-      VALUES (@nombre, @fecha_instalacion, @imagen_url, @id_sensores, @longitud, @latitud);
+      VALUES (?, ?, ?, ?, ?, ?);
     `;
-    const request = pool.request();
-    const result = await pool.request()
-      .input('nombre', sql.NVarChar, nombre)
-      .input('fecha_instalacion', sql.DateTime, fecha_instalacion)
-      .input('imagen_url', sql.NVarChar, imagen_url)
-      .input('id_sensores', sql.NVarChar, id_sensores)
-      .input('longitud', sql.Float, longitud)
-      .input('latitud', sql.Float, latitud)
-      .query(insertQuery);
-    return createResponse(200, {}, {
-      message: 'Colmena creada exitosamente',
-      data: result.recordset
-    }
-    );
 
+    const [result] = await connection.execute(insertQuery, [
+      nombre,
+      fecha_instalacion,
+      imagen_url,
+      id_sensores,
+      longitud,
+      latitud
+    ]);
+
+    return createResponse(200, {
+      message: 'Colmena creada exitosamente',
+      data: {
+        id_colmena: result.insertId,
+        nombre,
+        fecha_instalacion,
+        imagen_url,
+        id_sensores,
+        longitud,
+        latitud
+      }
+    });
 
   } catch (err) {
-    console.error('ERROR EN HANDLER:', err); // 👈 esto imprime el verdadero problema
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message }) // 👈 nota que antes decía error.message pero deberías capturar "err"
-    };
+    console.error('ERROR EN HANDLER:', err);
+    return createResponse(500, { error: err.message });
   } finally {
-    if (pool) {
+    if (connection) {
       try {
-        await pool.close();
+        await connection.end();
       } catch (err) {
-        console.err('Error al cerrar la conexión:', err);
+        console.error('Error al cerrar la conexión:', err);
       }
     }
   }

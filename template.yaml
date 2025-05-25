@@ -118,7 +118,7 @@ Resources:
   colmCreateFunction:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: lambda_colm_update.handler
+        Handler: lambda_colm_create.handler
         CodeUri: src/functions/colmCreateFunction
         Runtime: nodejs22.x
         Architectures:      
