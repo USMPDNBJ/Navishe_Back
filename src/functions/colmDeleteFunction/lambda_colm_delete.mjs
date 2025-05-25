@@ -8,10 +8,8 @@ export const handler = async (event) => {
   };
 
   try {
-    // Obtener id_colmena del pathParameters (ajusta según cómo recibas el evento)
     const id_colmena = event.pathParameters?.id;
 
-    // Validar parámetro requerido
     if (!id_colmena) {
       return {
         statusCode: 400,
@@ -20,7 +18,7 @@ export const handler = async (event) => {
       };
     }
 
-    // Configuración conexión MySQL
+    // Mover la configuración fuera del handler o usar variables de entorno
     const dbConfig = {
       host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
       user: 'admin',
@@ -28,39 +26,40 @@ export const handler = async (event) => {
       database: 'bd-na-vishe-test',
     };
 
-    const connection = await mysql.createConnection(dbConfig);
+    let connection;
+    try {
+      connection = await mysql.createConnection(dbConfig);
+      
+      const [result] = await connection.execute(
+        'DELETE FROM t_colmena WHERE id_colmena = ?',
+        [id_colmena]
+      );
 
-    // Ejecutar DELETE parametrizado
+      if (result.affectedRows === 0) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({ error: 'Colmena no encontrada' }),
+        };
+      }
 
-    const [result] = await connection.execute(
-      'DELETE FROM t_colmena WHERE id_colmena = ?',
-      [id_colmena]
-    );
-
-    await connection.end();
-
-    if (result.affectedRows === 0) {
       return {
-        statusCode: 404,
+        statusCode: 200,
         headers,
-        body: JSON.stringify({ error: 'Colmena no encontrada' }),
+        body: JSON.stringify({
+          message: 'Colmena eliminada exitosamente',
+          id_colmena,
+        }),
       };
+    } finally {
+      if (connection) await connection.end();
     }
-     const result2 = await database.deleteItem(id); 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        message: 'Colmena eliminada exitosamente',
-        id_colmena,
-      }),
-    };
   } catch (error) {
     console.error('Error:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: `Error: ${error.message}` }),
+      body: JSON.stringify({ error: `Error interno: ${error.message}` }),
     };
   }
 };
