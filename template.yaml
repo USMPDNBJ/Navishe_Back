@@ -215,6 +215,25 @@ Resources:
       Timeout: 100
       Description: LAMBDA PARA OBTENER DATA De IOT CORE
 
+  
+  colmFindIdfunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: lambda_colm_sensores_find_id.handler
+        Runtime: nodejs22.x
+        CodeUri: src/functions/colmFindIdFunction
+        Architectures:
+          - x86_64
+        MemorySize: 128
+        Timeout: 100
+        Description: LAMBDA PARA OBTENER DATOS DE UNA COLMENA POR ID
+        Events:
+          Api:
+            Type: Api
+            Properties:
+              Path: /sensores/{id}
+              Method: GET
+
 
 
   ApplicationResourceGroup:
