@@ -1,5 +1,5 @@
-
 export const handler = async (event) => {
+  const mysql = await import('mysql2/promise'); // Import dinámico para permitir el mock en tests
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "DELETE, OPTIONS",
@@ -16,7 +16,7 @@ export const handler = async (event) => {
         body: JSON.stringify({ error: 'id_colmena es obligatorio' }),
       };
     }
-    const mysql = await import('mysql2/promise');
+
     // Mover la configuración fuera del handler o usar variables de entorno
     const dbConfig = {
       host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
@@ -25,7 +25,8 @@ export const handler = async (event) => {
       database: 'bd-na-vishe-test',
     };
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.default.createConnection(dbConfig);
+
     console.log(id_colmena)
     const [result] = await connection.execute(
       'DELETE FROM t_colmena WHERE id_colmena = ?',

@@ -7,16 +7,17 @@ const mockConnection = {
   end: jest.fn().mockResolvedValue()
 };
 
-const mockCreatePool = jest.fn(() => ({
-  promise: () => mockConnection
+const mockCreateConnection = jest.fn(() => mockConnection);
+
+jest.unstable_mockModule('mysql2/promise', () => ({
+  default: {
+    createConnection: mockCreateConnection,
+  },
+  createConnection: mockCreateConnection,
 }));
 
-jest.unstable_mockModule('mysql2', () => ({
-  createPool: mockCreatePool
-}));
-
-import mysql from 'mysql2';
-import { handler } from '../../../src/functions/colmCreateFunction/lambda_colm_create.mjs';
+const mysql = await import('mysql2/promise');
+const { handler } = await import('../../../src/functions/colmCreateFunction/lambda_colm_create.mjs');
 
 describe('Lambda colm_create Handler', () => {
   beforeEach(() => {
@@ -40,7 +41,7 @@ describe('Lambda colm_create Handler', () => {
     expect(response.statusCode).toBe(200);
     console.log("mensaje",body.message)
     expect(body.message).toBe('Colmena creada exitosamente');
-    // expect(mockExecute).toHaveBeenCalled();
+    expect(mockExecute).toHaveBeenCalled();
   });
 
   it('should handle database errors', async () => {
