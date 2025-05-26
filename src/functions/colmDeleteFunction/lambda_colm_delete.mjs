@@ -1,4 +1,3 @@
-import mysql from 'mysql2/promise';
 
 export const handler = async (event) => {
   const headers = {
@@ -6,7 +5,7 @@ export const handler = async (event) => {
     "Access-Control-Allow-Methods": "DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization"
   };
-
+  let connection
   try {
     const id_colmena = event.pathParameters?.id;
 
@@ -17,7 +16,7 @@ export const handler = async (event) => {
         body: JSON.stringify({ error: 'id_colmena es obligatorio' }),
       };
     }
-
+    const mysql = await import('mysql2/promise');
     // Mover la configuración fuera del handler o usar variables de entorno
     const dbConfig = {
       host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
@@ -26,40 +25,46 @@ export const handler = async (event) => {
       database: 'bd-na-vishe-test',
     };
 
-    let connection;
-    try {
-      connection = await mysql.createConnection(dbConfig);
-      
-      const [result] = await connection.execute(
-        'DELETE FROM t_colmena WHERE id_colmena = ?',
-        [id_colmena]
-      );
+    connection = await mysql.createConnection(dbConfig);
+    console.log(id_colmena)
+    const [result] = await connection.execute(
+      'DELETE FROM t_colmena WHERE id_colmena = ?',
+      [id_colmena]
+    );
 
-      if (result.affectedRows === 0) {
-        return {
-          statusCode: 404,
-          headers,
-          body: JSON.stringify({ error: 'Colmena no encontrada' }),
-        };
-      }
+    console.log(result);
 
+    if (result.affectedRows === 0) {
       return {
-        statusCode: 200,
+        statusCode: 404,
         headers,
-        body: JSON.stringify({
-          message: 'Colmena eliminada exitosamente',
-          id_colmena,
-        }),
+        body: JSON.stringify({ error: 'Colmena no encontrada' }),
       };
-    } finally {
-      if (connection) await connection.end();
     }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        message: 'Colmena eliminada exitosamente',
+        id_colmena,
+      }),
+    };
+
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error en la ejecución SQL:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: `Error interno: ${error.message}` }),
+      body: JSON.stringify({ error: 'Error interno del servidor' }),
     };
+  } finally {
+    if (connection) {
+      try {
+        await connection.end();
+      } catch (endError) {
+        console.error('Error cerrando conexión:', endError);
+      }
+    }
   }
 };
