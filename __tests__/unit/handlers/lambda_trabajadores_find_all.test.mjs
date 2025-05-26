@@ -1,124 +1,72 @@
+// Importa jest explícitamente
 import { jest } from '@jest/globals';
-import sql from 'mssql';
-import { handler } from '../../../src/functions/GetTrabajadoresFunction/lambda_trabajadores_find_all.mjs';
+import { handler } from '../../../src/functions/trabajadorFindAllFunction/lambda_trabajadores_find_all.mjs';
+import mysql from 'mysql2/promise';
 
-describe('lambda_trabajadores_find_all', () => {
+// Configuración real de la DB para pruebas de integración
+const dbConfig = {
+  host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'Vishe-1234',
+  database: 'bd-na-vishe-test',
+  port: 3306
+};
+
+describe('Pruebas de Integración Real', () => {
   let pool;
+  let connection;
 
-  // Configurar conexión a la base de datos antes de las pruebas
   beforeAll(async () => {
-    try {
-      pool = await sql.connect({
-        user: 'NVS',
-      password: '@Vishe1234',
-      server: '161.132.55.86',
-      database: 'BD_NA_VISHE_PRUEBAS',// Reemplaza con el nombre de tu base de datos
-        options: {
-          encrypt: false,
-          trustServerCertificate: true,
-        },
-      });
-    } catch (error) {
-      console.error('Error conectando a la base de datos:', error);
-      throw error;
-    }
-  });
-
-  // Cerrar conexión después de todas las pruebas
-  afterAll(async () => {
-    if (pool && pool._connected) {
-      await pool.close();
-    }
-  });
-
-  it('debería retornar 200 y lista de trabajadores', async () => {
-    const event = {
-      httpMethod: 'GET',
-      pathParameters: null,
-      queryStringParameters: null,
-    };
-
-    const response = await handler(event);
-
-    expect(response.statusCode).toBe(200);
-    const body = JSON.parse(response.body);
-    expect(Array.isArray(body)).toBe(true);
-    // Verificar que los datos tengan el formato esperado
-    if (body.length > 0) {
-      expect(body[0]).toHaveProperty('id_trabajador');
-      expect(body[0]).toHaveProperty('correo');
-      expect(body[0]).toHaveProperty('rol');
-      expect(body[0]).toHaveProperty('fecha_registro');
-      expect(body[0]).toHaveProperty('nombre');
-    }
-  });
-
-  it('debería retornar 200 y lista vacía si no hay trabajadores', async () => {
-    // Nota: Esta prueba asume que puedes consultar un caso donde no hay datos.
-    // Como no puedes modificar la base de datos, esta prueba puede no aplicarse.
-    // Dejamos un comentario para indicar que depende de datos reales.
-    const event = {
-      httpMethod: 'GET',
-      pathParameters: null,
-      queryStringParameters: null,
-    };
-
-    const response = await handler(event);
-
-    expect(response.statusCode).toBe(200);
-    const body = JSON.parse(response.body);
-    expect(Array.isArray(body)).toBe(true);
-    // Si sabes que la tabla puede estar vacía en ciertos casos, descomenta la siguiente línea
-    // expect(body).toEqual([]);
-  });
-
-  it('debería retornar 405 si el método HTTP no es GET', async () => {
-    const event = {
-      httpMethod: 'POST',
-      pathParameters: null,
-      queryStringParameters: null,
-    };
-
-    const response = await handler(event);
-
-    expect(response.statusCode).toBe(405);
-    expect(JSON.parse(response.body)).toEqual({ message: 'Método no permitido' });
-  });
-
-  it('debería retornar 500 en caso de error en la base de datos', async () => {
-    // Simular un error usando credenciales inválidas
-    const invalidConfig = {
-      user: 'NVS',
-      password: 'WrongPassword',
-      server: '161.132.55.86',
-      database: 'BD_NA_VISHE_PRUEBAS',
-      options: {
-        encrypt: false,
-        trustServerCertificate: true,
-      },
-    };
+    pool = mysql.createPool(dbConfig);
+    connection = await pool.getConnection();
     
+    // Preparar datos de prueba
+    await connection.execute(`
+      INSERT INTO t_trabajador 
+      (correo, nombre, contrasena, rol, status, dni) 
+      VALUES 
+      ('test_jest1@vishe.com', 'Usuario Jest 1', 'pass1', 'user', 1, '11111111'),
+      ('test_jest2@vishe.com', 'Usuario Jest 2', 'pass2', 'admin', 0, '22222222')
+    `);
+  });
 
-    // Nota: Esto requiere que el manejador use la misma conexión.
-    // Si el manejador crea su propia conexión, necesitamos inyección de dependencias.
-    const event = {
-      httpMethod: 'GET',
-      pathParameters: null,
-      queryStringParameters: null,
-    };
+  afterAll(async () => {
+    // Limpiar datos de prueba
+    await connection.execute(`
+      DELETE FROM t_trabajador 
+      WHERE correo LIKE 'test_jest%@vishe.com'
+    `);
+    connection.release();
+    await pool.end();
+  });
 
-    // Reconectar para otras pruebas
-    if (!pool || pool._connected === false) {
-      pool = await sql.connect({
-        user: 'NVS',
-      password: '@Vishe1234',
-      server: '161.132.55.86',
-      database: 'BD_NA_VISHE_PRUEBAS',
-        options: {
-          encrypt: false,
-          trustServerCertificate: true,
-        },
+  test('Debería retornar todos los trabajadores', async () => {
+    const event = { httpMethod: 'GET' };
+    const response = await handler(event);
+    
+    expect(response.statusCode).toBe(200);
+    
+    const trabajadores = JSON.parse(response.body);
+    expect(trabajadores.some(t => t.correo.includes('test_jest'))).toBeTruthy();
+  });
+
+  describe('Filtrado de datos sensibles', () => {
+    it('no debe incluir la contraseña en la respuesta', async () => {
+      const event = { httpMethod: 'GET' };
+      const response = await handler(event);
+      const trabajadores = JSON.parse(response.body);
+      
+      trabajadores.forEach(trabajador => {
+        expect(trabajador).not.toHaveProperty('contrasena');
       });
-    }
+    });    
+  });
+
+  test('La respuesta debe ser un array de trabajadores', async () => {
+    const event = { httpMethod: 'GET' };
+    const response = await handler(event);
+    const trabajadores = JSON.parse(response.body);
+
+    expect(Array.isArray(trabajadores)).toBe(true);
   });
 });
