@@ -20,10 +20,14 @@ jest.unstable_mockModule('mysql2/promise', () => {
   };
 });
 
-const mysql = await import('mysql2');
+
+const mysql = await import('mysql2/promise');
 const { handler } = await import('../../../src/functions/colmDeleteFunction/lambda_colm_delete.mjs');
 
 describe('handler - DELETE colmena (MySQL)', () => {
+
+
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -36,27 +40,28 @@ describe('handler - DELETE colmena (MySQL)', () => {
   });
 
   test('retorna 404 si no se encuentra la colmena', async () => {
-    mysql.__executeMock.mockResolvedValueOnce([{ affectedRows: 0 }, []]);
+    mysql.__executeMock.mockReset();
+    // ✅ Simulamos DELETE sin filas afectadas
+    mysql.__executeMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
 
-    const response = await handler({
-      pathParameters: { id: '999' },
-    });
+    const response = await handler({ pathParameters: { id: '35' } });
 
     expect(response.statusCode).toBe(404);
     expect(JSON.parse(response.body).error).toBe('Colmena no encontrada');
   });
 
+
   test('retorna 200 si elimina correctamente la colmena', async () => {
     mysql.__executeMock.mockResolvedValueOnce([{ affectedRows: 1 }, []]);
 
     const response = await handler({
-      pathParameters: { id: '150' },
+      pathParameters: { id: '35' },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body.message).toBe('Colmena eliminada exitosamente');
-    expect(body.id_colmena).toBe('150');
+    expect(body.id_colmena).toBe('35');
   });
 
   test('retorna 500 en caso de error interno', async () => {
@@ -64,7 +69,7 @@ describe('handler - DELETE colmena (MySQL)', () => {
     // ✅ Simulamos error interno en execute
     mysql.__executeMock.mockRejectedValueOnce(new Error('Error de conexión'));
 
-    const response = await handler({ pathParameters: { id: '149' } });
+    const response = await handler({ pathParameters: { id: '35' } });
 
     console.log('Mock calls:', mysql.__executeMock.mock.calls);
     console.log('Response:', response);
