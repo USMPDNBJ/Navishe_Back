@@ -1,6 +1,6 @@
 {
-  "name": "delete-test-01",
-  "description": "delete-test-01-description",
+  "name": "create-test-01",
+  "description": "create-test-01-description",
   "version": "0.0.1",
   "private": true,
   "dependencies": {

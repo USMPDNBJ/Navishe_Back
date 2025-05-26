@@ -1,21 +1,18 @@
 import { jest } from '@jest/globals';
 
-// Mock de MySQL2
-jest.unstable_mockModule('mysql2', () => {
-  const executeMock = jest.fn();
-  const connectionMock = {
-    execute: executeMock,
-    end: jest.fn(),
-  };
 
-  const poolMock = {
-    promise: () => connectionMock,
+// ✅ 1. Mock ANTES de cualquier import del handler
+jest.unstable_mockModule('mysql2/promise', () => {
+  const connectionMock = {
+    execute: jest.fn(),
+    end: jest.fn().mockResolvedValue(undefined),
   };
 
   return {
-    createPool: jest.fn(() => poolMock),
-    __connectionMock: connectionMock, // para acceder desde los tests
-    __executeMock: executeMock,
+    default: {
+      createConnection: jest.fn().mockResolvedValue(connectionMock),
+    },
+    __executeMock: connectionMock.execute,
   };
 });
 
@@ -58,12 +55,18 @@ describe('handler - DELETE colmena (MySQL)', () => {
     expect(body.id_colmena).toBe('150');
   });
 
-  test('retorna 500 en caso de error interno', async () => {
-    mysql.__executeMock.mockRejectedValueOnce(new Error('Error de conexión'));
+test('retorna 500 en caso de error interno', async () => {
+  // ✅ 3. Forzar que `execute` lance un error
+  mysql.__executeMock.mockReset();
+  mysql.__executeMock.mockRejectedValueOnce(new Error('Error de conexión'));
 
     const response = await handler({ pathParameters: { id: '149' } });
 
-    expect(response.statusCode).toBe(500);
-    expect(JSON.parse(response.body).error).toMatch(/Error de conexión/);
-  });
+  console.log('Mock calls:', mysql.__executeMock.mock.calls);
+  console.log('Response:', response);
+
+  // ✅ 4. Este assert debería pasar
+  expect(mysql.__executeMock).toHaveBeenCalled();
+  expect(response.statusCode).toBe(500);
+  expect(JSON.parse(response.body).error).toBe('Error interno del servidor');
 });
