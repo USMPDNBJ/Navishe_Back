@@ -1,24 +1,19 @@
-import sql from 'mssql';
+import { createConnection } from 'mysql2/promise';
 
 const dbConfig = {
-  server: '161.132.55.86',
-  user: 'NVS',
-  password: '@Vishe1234',
-  database: 'BD_NA_VISHE_PRUEBAS',
-  options: {
-    encrypt: true,
-    trustServerCertificate: true,
-  },
+  host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'Vishe-1234',
+  database: 'bd-na-vishe-test',
+  port: 3306,
 };
 
 export const handler = async (event, context) => {
-  let pool;
+  let connection;
   try {
-    // Parse the event body
     const body = JSON.parse(event.body || '{}');
-    const id_trabajador = body.id_trabajador;
+    const { id_trabajador } = body;
 
-    // Validate input
     if (!id_trabajador) {
       return {
         statusCode: 400,
@@ -28,17 +23,30 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Connect to the database
-    pool = await sql.connect(dbConfig);
+    connection = await createConnection(dbConfig);
 
-    // Execute the delete query
-    const result = await pool
-      .request()
-      .input('id_trabajador', sql.Int, id_trabajador)
-      .query('DELETE FROM t_trabajador WHERE id_trabajador = @id_trabajador');
+    let result;
+    try {
+      const execResult = await connection.execute(
+        'DELETE FROM t_trabajador WHERE id_trabajador = ?',
+        [id_trabajador]
+      );
+      result = execResult && execResult[0];
+    } catch (err) {
+      console.error('ERROR EN CATCH INTERNO:', err); // <-- Log para depuración
+      throw err;
+    }
 
-    // Check if a record was deleted
-    if (result.rowsAffected[0] === 0) {
+    if (!result || typeof result.affectedRows !== 'number') {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Worker not found',
+        }),
+      };
+    }
+
+    if (result.affectedRows === 0) {
       return {
         statusCode: 404,
         body: JSON.stringify({
@@ -50,16 +58,16 @@ export const handler = async (event, context) => {
     return {
       statusCode: 200,
       headers: {
-        "Access-Control-Allow-Origin": "*",  // Habilitar CORS
-        "Access-Control-Allow-Methods": "POST, OPTIONS", // Métodos permitidos
-        "Access-Control-Allow-Headers": "Content-Type, Authorization" // Encabezados permitidos
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
       },
       body: JSON.stringify({
         message: 'Worker deleted successfully',
       }),
     };
   } catch (err) {
-    console.error('Error:', err);
+    console.error('ERROR EN CATCH:', err); // <-- Log para depuración
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -68,9 +76,13 @@ export const handler = async (event, context) => {
       }),
     };
   } finally {
-    // Close the database connection
-    if (pool) {
-      await pool.close();
+    // Cerrar conexión solo si fue creada
+    if (connection) {
+      try {
+        await connection.end();
+      } catch (closeErr) {
+        console.error('Error closing DB connection:', closeErr);
+      }
     }
   }
 };

@@ -20,7 +20,8 @@
     "mssql": "^11.0.1"
   },
   "scripts": {
-    "test": "set NODE_OPTIONS=--experimental-vm-modules && jest --no-cache"
+    "test": "set NODE_OPTIONS=--experimental-vm-modules && jest --config jest.config.mjs --no-cache"
   },
   "type": "module"
+  
 }
