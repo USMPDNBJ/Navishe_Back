@@ -1,3 +1,6 @@
 {
-  "body": null
+  "httpMethod": "GET",
+  "body": null,
+  "pathParameters": null,
+  "queryStringParameters": null
 }
