@@ -1,3 +1,12 @@
 {
-  "body": "{\"correo\":\"admin@vishe.com\", \"contrasena\":\"123456\"}"
+  "httpMethod": "POST",
+  "body": "{\"correo\":\"admin@vishe.com\", \"contrasena\":\"123456\"}",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "requestContext": {
+    "http": {
+      "method": "POST"
+    }
+  }
 }

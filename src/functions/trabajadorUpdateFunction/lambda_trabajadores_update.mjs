@@ -1,70 +1,115 @@
-import sql from 'mssql';
+import mysql from 'mysql2/promise';
 
-const config = {
-  user: 'NVS',
-  password: '@Vishe1234',
-  server: '161.132.55.86',
-  database: 'BD_NA_VISHE_PRUEBAS',
-  options: {
-    encrypt: true,
-    trustServerCertificate: true
-  }
+const dbConfig = {
+  host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'Vishe-1234',
+  database: 'bd-na-vishe-test',
+  port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 };
 
+// Creamos un pool de conexiones
+const pool = mysql.createPool(dbConfig);
+
 export const handler = async (event) => {
+  // Validar CORS para solicitudes OPTIONS
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "PUT, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      },
+      body: JSON.stringify({})
+    };
+  }
+
+  // Validar que el método sea PUT
+  if (event.httpMethod !== 'PUT') {
+    return {
+      statusCode: 405,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "PUT, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      },
+      body: JSON.stringify({ message: 'Método no permitido' })
+    };
+  }
+
+  let connection;
   try {
     const id = event.pathParameters?.id;
     if (!id) {
       return {
         statusCode: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "PUT, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        },
         body: JSON.stringify({ error: "ID de trabajador no proporcionado" })
       };
     }
 
-    const body = JSON.parse(event.body);
+    const body = JSON.parse(event.body || '{}');
     const { correo, nombre, contrasena, rol, status, dni } = body;
 
-    if (!correo || !nombre || !contrasena || !rol || !status || !dni) {
+    if (!correo || !nombre || !contrasena || !rol || status === undefined || !dni) {
       return {
         statusCode: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "PUT, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        },
         body: JSON.stringify({ error: "Faltan campos requeridos" })
       };
     }
 
     const statusBit = status === 'ACTIVO' || status === '1' || status === 1 ? 1 : 0;
+    const fecha_registro = new Date();
 
-    const pool = await sql.connect(config);
+    // Obtenemos una conexión del pool
+    connection = await pool.getConnection();
+    
+    // Ejecutamos la consulta con parámetros escapados
+    const [result] = await connection.execute(
+      `UPDATE t_trabajador
+       SET correo = ?,
+           nombre = ?,
+           contrasena = ?,
+           rol = ?,
+           status = ?,
+           dni = ?,
+           fecha_registro = ?
+       WHERE id_trabajador = ?`,
+      [correo, nombre, contrasena, rol, statusBit, dni, fecha_registro, id]
+    );
 
-    const result = await pool.request()
-      .input('id_trabajador', sql.Int, id)
-      .input('correo', sql.VarChar, correo)
-      .input('nombre', sql.VarChar, nombre)
-      .input('contrasena', sql.VarChar, contrasena)
-      .input('rol', sql.VarChar, rol)
-      .input('status', sql.Bit, statusBit)
-      .input('dni', sql.VarChar, dni)
-      .input('fecha_registro', sql.DateTime, new Date())
-      .query(`
-        UPDATE t_trabajador
-        SET correo = @correo,
-            nombre = @nombre,
-            contrasena = @contrasena,
-            rol = @rol,
-            status = @status,
-            dni = @dni,
-            fecha_registro = @fecha_registro
-        WHERE id_trabajador = @id_trabajador
-      `);
-
-    if (result.rowsAffected[0] === 0) {
+    if (result.affectedRows === 0) {
       return {
         statusCode: 404,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "PUT, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        },
         body: JSON.stringify({ message: "Trabajador no encontrado" })
       };
     }
 
     return {
       statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "PUT, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      },
       body: JSON.stringify({ message: "Trabajador actualizado correctamente" })
     };
 
@@ -72,9 +117,18 @@ export const handler = async (event) => {
     console.error("Error al actualizar trabajador:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Error interno del servidor" })
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "PUT, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      },
+      body: JSON.stringify({ 
+        error: "Error interno del servidor",
+        details: error.message 
+      })
     };
   } finally {
-    await sql.close();
+    // Liberamos la conexión de vuelta al pool
+    if (connection) connection.release();
   }
 };

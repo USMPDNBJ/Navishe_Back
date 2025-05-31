@@ -1,11 +1,14 @@
 {
-  "name": "trabajador-delete-",
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  "name": "colm-delete-test-01",
+  "description": "colm-delete-test-01-description",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@influxdata/influxdb-client": "^1.35.0",
+    "mysql2": "^3.14.1"
   },
   "devDependencies": {
+    "@azure/identity": "^4.10.0",
     "@babel/core": "^7.27.1",
     "@babel/preset-env": "^7.27.2",
     "@jest/globals": "^29.7.0",
@@ -17,8 +20,7 @@
     "mssql": "^11.0.1"
   },
   "scripts": {
-    "test": "set NODE_OPTIONS=--experimental-vm-modules && jest --config jest.config.mjs --no-cache"
+    "test": "set NODE_OPTIONS=--experimental-vm-modules && jest --no-cache"
   },
   "type": "module"
-  
 }
