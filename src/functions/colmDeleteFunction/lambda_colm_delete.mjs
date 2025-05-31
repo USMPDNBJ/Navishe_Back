@@ -1,17 +1,14 @@
-import mysql from 'mysql2/promise';
-
 export const handler = async (event) => {
+  const mysql = await import('mysql2/promise'); // Import dinámico para permitir el mock en tests
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization"
   };
-
+  let connection
   try {
-    // Obtener id_colmena del pathParameters (ajusta según cómo recibas el evento)
     const id_colmena = event.pathParameters?.id;
 
-    // Validar parámetro requerido
     if (!id_colmena) {
       return {
         statusCode: 400,
@@ -20,7 +17,7 @@ export const handler = async (event) => {
       };
     }
 
-    // Configuración conexión MySQL
+    // Mover la configuración fuera del handler o usar variables de entorno
     const dbConfig = {
       host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
       user: 'admin',
@@ -28,16 +25,15 @@ export const handler = async (event) => {
       database: 'bd-na-vishe-test',
     };
 
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.default.createConnection(dbConfig);
 
-    // Ejecutar DELETE parametrizado
-
+    console.log(id_colmena)
     const [result] = await connection.execute(
       'DELETE FROM t_colmena WHERE id_colmena = ?',
       [id_colmena]
     );
 
-    await connection.end();
+    console.log(result);
 
     if (result.affectedRows === 0) {
       return {
@@ -46,7 +42,7 @@ export const handler = async (event) => {
         body: JSON.stringify({ error: 'Colmena no encontrada' }),
       };
     }
-     const result2 = await database.deleteItem(id); 
+
     return {
       statusCode: 200,
       headers,
@@ -55,12 +51,21 @@ export const handler = async (event) => {
         id_colmena,
       }),
     };
+
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error en la ejecución SQL:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: `Error: ${error.message}` }),
+      body: JSON.stringify({ error: 'Error interno del servidor' }),
     };
+  } finally {
+    if (connection) {
+      try {
+        await connection.end();
+      } catch (endError) {
+        console.error('Error cerrando conexión:', endError);
+      }
+    }
   }
 };

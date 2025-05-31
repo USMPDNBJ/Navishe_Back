@@ -4,5 +4,4 @@ export default {
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).mjs'],
   transform: {},
   modulePathIgnorePatterns: [".aws-sam/",'src/functions/colmSensoresFunction/',]
-  
 };
