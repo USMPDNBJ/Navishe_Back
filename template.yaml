@@ -60,7 +60,7 @@ Resources:
             Path: /trabajador/{id}
             Method: DELETE
 
-  camaraFindIdFunction:
+  camFindIdFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_cam_find_id.handler
