@@ -1,0 +1,44 @@
+{
+  "body": null,
+  "resource": "/beehives",
+  "path": "/beehives",
+  "httpMethod": "GET",
+  "isBase64Encoded": false,
+  "queryStringParameters": {},
+  "pathParameters": {},
+  "stageVariables": {},
+  "headers": {
+    "Accept": "application/json",
+    "Host": "1234567890.execute-api.us-east-1.amazonaws.com",
+    "User-Agent": "Custom User Agent String",
+    "X-Forwarded-For": "127.0.0.1",
+    "X-Forwarded-Port": "443",
+    "X-Forwarded-Proto": "https"
+  },
+  "requestContext": {
+    "accountId": "123456789012",
+    "resourceId": "123456",
+    "stage": "prod",
+    "requestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
+    "requestTime": "11/May/2025:12:34:56 +0000",
+    "requestTimeEpoch": 1746797696000,
+    "identity": {
+      "cognitoIdentityPoolId": null,
+      "accountId": null,
+      "cognitoIdentityId": null,
+      "caller": null,
+      "accessKey": null,
+      "sourceIp": "127.0.0.1",
+      "cognitoAuthenticationType": null,
+      "cognitoAuthenticationProvider": null,
+      "userArn": null,
+      "userAgent": "Custom User Agent String",
+      "user": null
+    },
+    "path": "/prod/beehives",
+    "resourcePath": "/beehives",
+    "httpMethod": "GET",
+    "apiId": "1234567890",
+    "protocol": "HTTP/1.1"
+  }
+}

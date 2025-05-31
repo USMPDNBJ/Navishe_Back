@@ -4,30 +4,30 @@ Description: >-
 Transform:
 - AWS::Serverless-2016-10-31
 Resources:
-
-  LoginTrabajadorFunction:
+  camFindAllFunction:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: nodejs22.x
       Architectures:
-        - x86_64
+          - x86_64
       MemorySize: 128
+      CodeUri: src/functions/camFindAllFunction
       Timeout: 100
-      Description: LAMBDA PARA LOGIN DE TRABAJADORES
-      Handler: src/handlers/lambda_trabajadores_login.handler
+      Description: LAMBDA PARA EL FIND_ALL DE LAS CAMARAS
+      Handler: lambda_cam_find_all.handler
       Events:
-        LoginTrabajador:
+        GetTrabajadores:
           Type: Api
           Properties:
-            Path: /login
-            Method: POST
+              Path: /cameras
+              Method: GET
 
 
   colmFindAllFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_colm_find_all.handler
-      codeUri: src/functions/colmFindAllFunction
+      CodeUri: src/functions/colmFindAllFunction
       Runtime: nodejs22.x
       Architectures:
         - x86_64
@@ -45,7 +45,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_trabajadores_create.handler
-      codeUri: src/functions/trabajadorCreateFunction
+      CodeUri: src/functions/trabajadorCreateFunction
       Runtime: nodejs22.x
       Architectures:
         - x86_64
@@ -64,7 +64,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_trabajadores_delete.handler
-      codeUri: src/functions/trabajadorDeleteFunction
+      CodeUri: src/functions/trabajadorDeleteFunction
       Runtime: nodejs22.x
       Architectures:
         - x86_64
@@ -78,32 +78,32 @@ Resources:
             Path: /trabajador/{id}
             Method: DELETE
 
-  LoginTrabajadorFunction:
+  trabajadorLoginFunction:
       Type: AWS::Serverless::Function
       Properties:
-      Runtime: nodejs20.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      CodeUri: src/functions/LoginTrabajadorFunction
-      Timeout: 100
-      Description: LAMBDA PARA LOGIN DE TRABAJADORES
-      Handler: lambda_trabajadores_login.handler
-      Events:
-        LoginTrabajador:
-          Type: Api
-          Properties:
-            Path: /trabajador
-            Method: post
+        Runtime: nodejs22.x
+        Architectures:
+          - x86_64
+        MemorySize: 128      
+        Timeout: 100
+        Description: LAMBDA PARA LOGIN DE TRABAJADORES
+        CodeUri: src/functions/trabajadorLoginFunction
+        Handler: lambda_trabajadores_login.handler
+        Events:
+          LoginTrabajador:
+            Type: Api
+            Properties:
+              Path: /login
+              Method: post
 
-  GetTrabajadoresFunction:
+  trabajadorFindAllFunction:
       Type: AWS::Serverless::Function
       Properties:
         Runtime: nodejs22.x
         Architectures:
           - x86_64
         MemorySize: 128
-        CodeUri: src/functions/GetTrabajadoresFunction
+        CodeUri: src/functions/trabajadorFindAllFunction
         Timeout: 100
         Description: LAMBDA PARA EL FIND_ALL DE TRABAJADORES
         Handler: lambda_trabajadores_find_all.handler
@@ -115,15 +115,14 @@ Resources:
               Method: GET
 
 
-  UpdateTrabajadorFunction:
+  trabajadorUpdateFunction:
       Type: AWS::Serverless::Function
       Properties:
         Runtime: nodejs22.x
         Architectures:
           - x86_64
         MemorySize: 128
-        CodeUri: src/functions/UpdateTrabajadorFunction
-
+        CodeUri: src/functions/trabajadorUpdateFunction
         Timeout: 100
         Description: LAMBDA PARA EL UPDATE DE TRABAJADORES
         Handler: lambda_trabajadores_update.handler
@@ -137,7 +136,8 @@ Resources:
   colmCreateFunction:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: src/handlers/lambda_colm_create.handler
+        Handler: lambda_colm_create.handler
+        CodeUri: src/functions/colmCreateFunction
         Runtime: nodejs22.x
         Architectures:      
           - x86_64
@@ -154,7 +154,8 @@ Resources:
   colmDeleteFunction:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: src/handlers/lambda_colm_delete.handler
+        Handler: lambda_colm_delete.handler
+        CodeUri: src/functions/colmDeleteFunction
         Runtime: nodejs22.x
         Architectures:
           - x86_64
@@ -171,7 +172,8 @@ Resources:
   colmUpdateFunction:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: src/handlers/lambda_colm_update.handler
+        Handler: lambda_colm_update.handler
+        CodeUri: src/functions/colmUpdateFunction
         Runtime: nodejs22.x
         Architectures:
           - x86_64

@@ -1,11 +1,12 @@
 {
-    "name": "colm-sensores-test-01",
+    "name": "trabajador-update-01",
     "description": "delete-test-01-description",
     "version": "0.0.1",
     "private": true,
     "dependencies": {
         "@influxdata/influxdb-client": "^1.35.0",
-        "mssql": "^11.0.1"
+        "mssql": "^11.0.1",
+        "mysql2": "^3.14.1"
     },
     "devDependencies": {
         "@babel/core": "^7.27.1",
