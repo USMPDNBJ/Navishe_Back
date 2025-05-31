@@ -60,6 +60,24 @@ Resources:
             Path: /trabajador/{id}
             Method: DELETE
 
+  camaraFindIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_cam_find_id.handler
+      CodeUri: src/functions/camFindIdFunction
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: LAMBDA PARA SELERCIONAR CAMARAS POR ID
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /camara/{id}
+            Method: GET         
+
   trabajadorLoginFunction:
       Type: AWS::Serverless::Function
       Properties:
