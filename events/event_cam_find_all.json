@@ -1,0 +1,15 @@
+{
+  "httpMethod": "GET",
+  "path": "/cameras",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": null,
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/cameras"
+  }
+}

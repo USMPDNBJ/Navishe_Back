@@ -4,6 +4,24 @@ Description: >-
 Transform:
 - AWS::Serverless-2016-10-31
 Resources:
+  camFindAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs22.x
+      Architectures:
+          - x86_64
+      MemorySize: 128
+      CodeUri: src/functions/camFindAllFunction
+      Timeout: 100
+      Description: LAMBDA PARA EL FIND_ALL DE LAS CAMARAS
+      Handler: lambda_cam_find_all.handler
+      Events:
+        GetTrabajadores:
+          Type: Api
+          Properties:
+              Path: /cameras
+              Method: GET
+
 
   colmFindAllFunction:
     Type: AWS::Serverless::Function
