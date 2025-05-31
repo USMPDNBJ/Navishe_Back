@@ -4,7 +4,6 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "@aws-sdk/client-sns": "^3.821.0",
     "@influxdata/influxdb-client": "^1.35.0",
     "mssql": "^11.0.1",
     "mysql2": "^3.14.1"
@@ -24,4 +23,5 @@
     "test": "set NODE_OPTIONS=--experimental-vm-modules && jest --config jest.config.mjs --no-cache"
   },
   "type": "module"
+  
 }

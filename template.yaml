@@ -216,7 +216,26 @@ Resources:
       MemorySize: 128
       Timeout: 100
       Description: LAMBDA PARA OBTENER DATA De IOT CORE
-
+      
+  snsUbicacionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs22.x
+      Architectures:
+          - x86_64
+      MemorySize: 128
+      CodeUri: src/functions/snsUbicacionFunction
+      Timeout: 100
+      Description: LAMBDA PARA EL SNS DE UBICACIÓN 
+      Handler: lambda_sns_ubicacion.handler
+      Policies:
+      - Statement:
+          - Effect: Allow
+            Action: sns:Publish
+            Resource: arn:aws:sns:us-east-1:428847003734:sns_prod_notif
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: arn:aws:sns:us-east-1:428847003734:sns_prod_notif
 
 
   ApplicationResourceGroup:
