@@ -1,60 +1,52 @@
-import sql from 'mssql';
+// src/functions/colmFindAllFunction/lambda_colm_find_all.mjs
+import mysql from 'mysql2/promise';
 
-const dbConfig = {
-    server: '161.132.55.86',
-    user: 'NVS',
-    password: '@Vishe1234',
-    database: 'BD_NA_VISHE_PRUEBAS',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
+export const createHandler = (mysqlLib = mysql) => async (event, context) => {
+  let connection;
+
+  try {
+    connection = await mysqlLib.createConnection({
+      host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
+      user: 'admin',
+      password: 'Vishe-1234',
+      database: 'bd-na-vishe-test',
+      port: 3306,
+    });
+
+    const [rows] = await connection.execute(`
+      SELECT 
+        id_colmena,
+        nombre,
+        fecha_instalacion,
+        imagen_url,
+        id_sensores
+      FROM t_colmena
+    `);
+
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      },
+      body: JSON.stringify({
+        message: 'Beehives retrieved successfully',
+        data: rows,
+      }),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error retrieving beehives',
+        error: err.message,
+      }),
+    };
+  } finally {
+    if (connection) await connection.end();
+  }
 };
 
-export const handler = async (event, context) => {
-    let pool;
-    try {
-        // Connect to the database
-        pool = await sql.connect(dbConfig);
-
-        // Query to get all beehives with specified columns
-        const result = await pool.request().query(`
-            SELECT 
-                id_colmena,
-                nombre,
-                fecha_instalacion,
-                imagen_url,
-                id_sensores
-            FROM t_colmena
-        `);
-
-        // Return successful response with data
-        return {
-            statusCode: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*",  // Habilitar CORS
-                "Access-Control-Allow-Methods": "GET, OPTIONS", // Métodos permitidos
-                "Access-Control-Allow-Headers": "Content-Type, Authorization" // Encabezados permitidos
-            },
-            body: JSON.stringify({
-                message: 'Beehives retrieved successfully',
-                data: result.recordset,
-            }),
-        };
-    } catch (err) {
-        // Handle errors
-        console.error('Error executing query:', err);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: 'Error retrieving beehives',
-                error: err.message,
-            }),
-        };
-    } finally {
-        // Close the database connection
-        if (pool) {
-            await pool.close();
-        }
-    }
-};
+// Exportar por defecto para uso normal
+export const handler = createHandler();

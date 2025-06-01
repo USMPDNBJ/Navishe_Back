@@ -1,27 +1,27 @@
-
 import { jest } from '@jest/globals';
-// Mock de MSSQL
-jest.mock('mssql', () => {
-  const requestMock = {
-    input: jest.fn().mockReturnThis(),
-    query: jest.fn(),
-  };
 
+// Mock de mysql2/promise para ESM
+const executeMock = jest.fn();
+const queryMock = jest.fn();
+const endMock = jest.fn();
+
+jest.unstable_mockModule('mysql2/promise', () => {
+  const connectionMock = {
+    execute: executeMock,
+    query: queryMock,
+    end: endMock,
+  };
   return {
-    connect: jest.fn(),
-    close: jest.fn(),
-    Int: 'Int',
-    VarChar: 'VarChar',
-    DateTime: 'DateTime',
-    Float: 'Float',
-    request: jest.fn(() => requestMock),
-    __requestMock: requestMock, // acceso externo opcional
+    default: {
+      createConnection: jest.fn(() => connectionMock),
+    },
+    createConnection: jest.fn(() => connectionMock),
   };
 });
 
-const sqlModule = await import('mssql');
-const sql = sqlModule.default;
-const { handler } = await import('../../../src/handlers/colmUpdateFunction/lambda_colm_update.mjs');
+const mysqlModule = await import('mysql2/promise');
+const mysql = mysqlModule.default || mysqlModule;
+const { handler } = await import('../../../src/functions/colmUpdateFunction/lambda_colm_update.mjs');
 
 describe('handler', () => {
   beforeEach(() => {
@@ -33,7 +33,6 @@ describe('handler', () => {
       pathParameters: null,
       body: JSON.stringify({}),
     });
-    
     expect(response.statusCode).toBe(400);
     expect(JSON.parse(response.body).error).toBe('id_colmena es obligatorio');
   });
@@ -43,7 +42,6 @@ describe('handler', () => {
       pathParameters: { id: '1' },
       body: '{invalidJson}',
     });
-
     expect(response.statusCode).toBe(400);
     expect(JSON.parse(response.body).error).toBe('El cuerpo de la solicitud no es un JSON válido');
   });
@@ -58,15 +56,13 @@ describe('handler', () => {
         latitud: -12.1,
       }),
     });
-
     expect(response.statusCode).toBe(400);
     expect(JSON.parse(response.body).error).toBe('nombre, fecha_instalacion, longitud y latitud son obligatorios');
   });
 
   test('retorna 404 si no se encuentra la colmena', async () => {
-    sql.connect.mockResolvedValueOnce(sql);
-    sql.request().query.mockResolvedValueOnce({ recordset: [] });
-
+    // Simula: primero busca (no encuentra), no llega a update
+    executeMock.mockResolvedValueOnce([[], []]);
     const response = await handler({
       pathParameters: { id: '1' },
       body: JSON.stringify({
@@ -92,10 +88,10 @@ describe('handler', () => {
       longitud: -76.9,
       latitud: -12.1,
     };
-
-    sql.connect.mockResolvedValueOnce(sql);
-    sql.request().query.mockResolvedValueOnce({ recordset: [mockColmena] });
-
+    // Simula: primero busca (encuentra), luego update
+    executeMock.mockResolvedValueOnce([[mockColmena], []]); // búsqueda
+    executeMock.mockResolvedValueOnce([{}, []]); // update
+    executeMock.mockResolvedValueOnce([[mockColmena], []]); // select final
     const response = await handler({
       pathParameters: { id: '1' },
       body: JSON.stringify({
@@ -107,14 +103,13 @@ describe('handler', () => {
         latitud: -12.1,
       }),
     });
-
     expect(response.statusCode).toBe(200);
     expect(JSON.parse(response.body).colmena).toEqual(mockColmena);
   });
 
   test('retorna 500 en caso de error interno', async () => {
-    sql.connect.mockRejectedValueOnce(new Error('Fallo de conexión'));
-
+    // Simula: error en la búsqueda
+    executeMock.mockRejectedValueOnce(new Error('Fallo de conexión'));
     const response = await handler({
       pathParameters: { id: '1' },
       body: JSON.stringify({
@@ -126,8 +121,26 @@ describe('handler', () => {
         latitud: -12.1,
       }),
     });
-
     expect(response.statusCode).toBe(500);
     expect(JSON.parse(response.body).error).toMatch(/Fallo de conexión/);
+  });
+
+  test('retorna 500 si el mock no devuelve array en update', async () => {
+    // Simula: update devuelve undefined (error de mock)
+    executeMock.mockResolvedValueOnce([[{ id_colmena: 1 }], []]); // búsqueda (simula que existe)
+    executeMock.mockResolvedValueOnce(undefined); // update (mal mock)
+    const response = await handler({
+      pathParameters: { id: '1' },
+      body: JSON.stringify({
+        nombre: 'Colmena A',
+        fecha_instalacion: '2024-01-01',
+        imagen_url: 'http://img.com/image.jpg',
+        id_sensores: 'ABC123',
+        longitud: -76.9,
+        latitud: -12.1,
+      }),
+    });
+    expect(response.statusCode).toBe(500);
+    expect(JSON.parse(response.body).error).toMatch(/resultado inesperado de la base de datos/);
   });
 });
