@@ -11,10 +11,9 @@ const dbConfig = {
   queueLimit: 0
 };
 
-// Creamos un pool de conexiones
 const pool = mysql.createPool(dbConfig);
 
-export const handler = async (event) => {
+export async function trabajadorUpdateHandler(event, injectedPool = pool) {
   // Validar CORS para solicitudes OPTIONS
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -74,10 +73,7 @@ export const handler = async (event) => {
     const statusBit = status === 'ACTIVO' || status === '1' || status === 1 ? 1 : 0;
     const fecha_registro = new Date();
 
-    // Obtenemos una conexión del pool
-    connection = await pool.getConnection();
-    
-    // Ejecutamos la consulta con parámetros escapados
+    connection = await injectedPool.getConnection();
     const [result] = await connection.execute(
       `UPDATE t_trabajador
        SET correo = ?,
@@ -112,9 +108,7 @@ export const handler = async (event) => {
       },
       body: JSON.stringify({ message: "Trabajador actualizado correctamente" })
     };
-
   } catch (error) {
-    console.error("Error al actualizar trabajador:", error);
     return {
       statusCode: 500,
       headers: {
@@ -128,7 +122,8 @@ export const handler = async (event) => {
       })
     };
   } finally {
-    // Liberamos la conexión de vuelta al pool
     if (connection) connection.release();
   }
-};
+}
+
+export const handler = trabajadorUpdateHandler;

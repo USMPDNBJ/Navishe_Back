@@ -11,10 +11,9 @@ const dbConfig = {
   queueLimit: 0
 };
 
-// Creamos un pool de conexiones
 const pool = mysql.createPool(dbConfig);
 
-export const handler = async (event) => {
+export async function trabajadorLoginHandler(event, injectedPool = pool) {
   console.log("Método:", event.httpMethod);
 
   // Validar CORS para solicitudes OPTIONS
@@ -60,17 +59,14 @@ export const handler = async (event) => {
       };
     }
 
-    // Obtenemos una conexión del pool
-    connection = await pool.getConnection();
-    
-    // Ejecutamos la consulta con parámetros escapados para seguridad
+    connection = await injectedPool.getConnection();
     const [rows] = await connection.execute(
-      `SELECT rol FROM t_trabajador 
-       WHERE correo = ? AND contrasena = ?`,
-      [correo, contrasena]
+      `SELECT rol, contrasena FROM t_trabajador 
+       WHERE correo = ?`,
+      [correo]
     );
 
-    if (rows.length === 0) {
+    if (rows.length === 0 || rows[0].contrasena !== contrasena) {
       return {
         statusCode: 401,
         headers: {
@@ -83,7 +79,6 @@ export const handler = async (event) => {
     }
 
     const { rol } = rows[0];
-
     return {
       statusCode: 200,
       headers: {
@@ -93,9 +88,7 @@ export const handler = async (event) => {
       },
       body: JSON.stringify({ rol })
     };
-
   } catch (error) {
-    console.error('Error durante el login:', error);
     return {
       statusCode: 500,
       headers: {
@@ -109,7 +102,8 @@ export const handler = async (event) => {
       })
     };
   } finally {
-    // Liberamos la conexión de vuelta al pool
     if (connection) connection.release();
   }
-};
+}
+
+export const handler = trabajadorLoginHandler;

@@ -1,72 +1,75 @@
 // Importa jest explícitamente
 import { jest } from '@jest/globals';
-import { handler } from '../../../src/functions/trabajadorFindAllFunction/lambda_trabajadores_find_all.mjs';
-import mysql from 'mysql2/promise';
 
-// Configuración real de la DB para pruebas de integración
-const dbConfig = {
-  host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
-  user: 'admin',
-  password: 'Vishe-1234',
-  database: 'bd-na-vishe-test',
-  port: 3306
+// Mock antes de importar el handler
+const mockQuery = jest.fn();
+const mockRelease = jest.fn();
+const mockGetConnection = jest.fn().mockResolvedValue({
+  query: mockQuery,
+  release: mockRelease
+});
+const mockCreatePool = jest.fn(() => ({
+  getConnection: mockGetConnection,
+  end: jest.fn()
+}));
+
+jest.unstable_mockModule('mysql2/promise', () => ({
+  createPool: mockCreatePool
+}));
+
+const mockTrabajadores = [
+  { id_trabajador: 1, fecha_registro: '2024-01-01', correo: 'test1@vishe.com', nombre: 'Test 1', rol: 'user', status: 1, dni: '111' },
+  { id_trabajador: 2, fecha_registro: '2024-01-02', correo: 'test2@vishe.com', nombre: 'Test 2', rol: 'admin', status: 0, dni: '222' }
+];
+
+// Importa la función pura después del mock
+import { trabajadorFindAllHandler } from '../../../src/functions/trabajadorFindAllFunction/lambda_trabajadores_find_all.mjs';
+
+const mockPool = {
+  getConnection: mockGetConnection
 };
 
-describe('Pruebas de Integración Real', () => {
-  let pool;
-  let connection;
-
-  beforeAll(async () => {
-    pool = mysql.createPool(dbConfig);
-    connection = await pool.getConnection();
-    
-    // Preparar datos de prueba
-    await connection.execute(`
-      INSERT INTO t_trabajador 
-      (correo, nombre, contrasena, rol, status, dni) 
-      VALUES 
-      ('test_jest1@vishe.com', 'Usuario Jest 1', 'pass1', 'user', 1, '11111111'),
-      ('test_jest2@vishe.com', 'Usuario Jest 2', 'pass2', 'admin', 0, '22222222')
-    `);
+describe('lambda_trabajadores_find_all - Pruebas Unitarias', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockRelease.mockReset();
+    mockGetConnection.mockClear();
   });
 
-  afterAll(async () => {
-    // Limpiar datos de prueba
-    await connection.execute(`
-      DELETE FROM t_trabajador 
-      WHERE correo LIKE 'test_jest%@vishe.com'
-    `);
-    connection.release();
-    await pool.end();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  test('Debería retornar todos los trabajadores', async () => {
+  it('debe devolver la lista de trabajadores correctamente', async () => {
+    mockQuery.mockResolvedValue([mockTrabajadores]);
     const event = { httpMethod: 'GET' };
-    const response = await handler(event);
-    
-    expect(response.statusCode).toBe(200);
-    
+    const response = await trabajadorFindAllHandler(event, mockPool);
     const trabajadores = JSON.parse(response.body);
-    expect(trabajadores.some(t => t.correo.includes('test_jest'))).toBeTruthy();
-  });
-
-  describe('Filtrado de datos sensibles', () => {
-    it('no debe incluir la contraseña en la respuesta', async () => {
-      const event = { httpMethod: 'GET' };
-      const response = await handler(event);
-      const trabajadores = JSON.parse(response.body);
-      
-      trabajadores.forEach(trabajador => {
-        expect(trabajador).not.toHaveProperty('contrasena');
-      });
-    });    
-  });
-
-  test('La respuesta debe ser un array de trabajadores', async () => {
-    const event = { httpMethod: 'GET' };
-    const response = await handler(event);
-    const trabajadores = JSON.parse(response.body);
-
     expect(Array.isArray(trabajadores)).toBe(true);
+    expect(trabajadores.length).toBe(2);
+    expect(trabajadores[0]).toHaveProperty('correo');
+    expect(trabajadores[0]).toHaveProperty('nombre');
+    expect(trabajadores[0]).toHaveProperty('rol');
+  });
+
+  it('debe devolver un arreglo vacío si no hay trabajadores', async () => {
+    mockQuery.mockResolvedValue([[]]);
+    const event = { httpMethod: 'GET' };
+    const response = await trabajadorFindAllHandler(event, mockPool);
+    const trabajadores = JSON.parse(response.body);
+    expect(Array.isArray(trabajadores)).toBe(true);
+    expect(trabajadores.length).toBe(0);
+  });
+
+  it('no debe incluir la contraseña en la respuesta', async () => {
+    // Simula que la consulta devuelve la propiedad contrasena
+    const trabajadoresConContrasena = mockTrabajadores.map(t => ({ ...t, contrasena: 'secreta' }));
+    mockQuery.mockResolvedValue([trabajadoresConContrasena]);
+    const event = { httpMethod: 'GET' };
+    const response = await trabajadorFindAllHandler(event, mockPool);
+    const trabajadores = JSON.parse(response.body);
+    trabajadores.forEach(trabajador => {
+      expect(trabajador).not.toHaveProperty('contrasena');
+    });
   });
 });

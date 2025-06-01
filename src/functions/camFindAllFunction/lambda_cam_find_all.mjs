@@ -13,7 +13,7 @@ const dbConfig = {
 
 const pool = mysql.createPool(dbConfig);
 
-export const handler = async (event) => {
+export async function camFindAllHandler(event, injectedPool = pool) {
   console.log('Evento recibido:', JSON.stringify(event, null, 2));
 
   // Manejo de CORS para OPTIONS
@@ -44,7 +44,7 @@ export const handler = async (event) => {
 
   let connection;
   try {
-    connection = await pool.getConnection();
+    connection = await injectedPool.getConnection();
     
     // Consulta para obtener todas las cámaras
     const [cameras] = await connection.query(`
@@ -80,4 +80,6 @@ export const handler = async (event) => {
   } finally {
     if (connection) connection.release();
   }
-};
+}
+
+export const handler = camFindAllHandler;

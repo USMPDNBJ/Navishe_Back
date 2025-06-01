@@ -13,7 +13,7 @@ const dbConfig = {
 
 const pool = mysql.createPool(dbConfig);
 
-export const handler = async (event) => {
+export async function trabajadorFindAllHandler(event, injectedPool = pool) {
   console.log('Evento recibido:', JSON.stringify(event, null, 2));
   
   // Manejo de CORS para OPTIONS
@@ -51,7 +51,7 @@ export const handler = async (event) => {
   let connection;
   try {
     console.log('Conectando a la base de datos...');
-    connection = await pool.getConnection();
+    connection = await injectedPool.getConnection();
     
     console.log('Ejecutando consulta...');
     const [rows] = await connection.query(`
@@ -108,4 +108,6 @@ export const handler = async (event) => {
       connection.release();
     }
   }
-};
+}
+
+export const handler = trabajadorFindAllHandler;
