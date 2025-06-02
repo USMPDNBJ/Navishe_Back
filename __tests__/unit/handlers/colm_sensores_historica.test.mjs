@@ -55,3 +55,19 @@ describe('Tests para handler (unitarias e integración)', () => {
     expect(body.humedad.data.length).toBeGreaterThan(0);
   }, 15000);
 });
+
+
+
+//test('Retorna 404 si no hay datos para el rango de fechas dado', async () => {
+//  const event = {
+//    id: 'colmena1',
+//    startDate: '1990-01-01T00:00:00Z', // Fecha fuera del rango posible
+//    endDate: '1990-01-02T00:00:00Z'
+//  };
+//
+//  const response = await handler(event);
+//
+//  expect(response.statusCode).toBe(404);
+//  const body = JSON.parse(response.body);
+//  expect(body.message).toMatch(/no se encontraron datos/i);
+//});

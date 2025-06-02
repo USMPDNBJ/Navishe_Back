@@ -30,3 +30,19 @@ test('handler responde con 400 si el evento está mal formado', async () => {
   expect(response.statusCode).toBe(400);
   expect(JSON.parse(response.body).message).toContain("Falta el parámetro id");
 });
+
+//
+//test('Debería retornar 400 si el parámetro id no es una cadena', async () => {
+  // Evento con `id` de tipo número, lo cual es un error común
+  //const mockEvent = { id: 12345 };
+
+  // Ejecutamos la función handler tal como se haría en producción
+  //const response = await handler(mockEvent);
+
+  // Esperamos un código de estado HTTP 400 (Bad Request)
+  //expect(response.statusCode).toBe(400);
+
+  // Verificamos que el mensaje explique claramente el problema
+  //const body = JSON.parse(response.body);
+  //expect(body.message).toContain("El parámetro id debe ser una cadena");
+//});

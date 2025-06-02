@@ -52,3 +52,19 @@ describe('handler', () => {
         expect(response.body).toContain('Error al procesar el mensaje');
     });
 });
+
+
+//test('Debería retornar 500 si falta un campo obligatorio (temperatura)', async () => {
+//  const event = {
+//    humedad: "65.3",
+//    // temperatura: "34.0",  ← Intencionalmente omitido
+//    ubicacion: "-12.0464,-77.0428",
+//   peso: "9.2",
+//    topic: "colmena/real"
+//  };
+//
+//  const response = await handler(event);
+//
+//  expect(response.statusCode).toBe(500);
+//  expect(response.body).toContain('Error al procesar el mensaje');
+//});
