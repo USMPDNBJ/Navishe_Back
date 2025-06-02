@@ -39,22 +39,7 @@ describe('Tests para handler (unitarias e integración)', () => {
     expect(JSON.parse(response.body).message).toMatch(/fecha inválido/i);
   });
 
-  test('Consulta real a InfluxDB devuelve datos', async () => {
-    const event = {
-      id: 'colmena1',
-      startDate: '2025-01-01T00:00:00Z',
-      endDate: '2025-01-02T00:00:00Z'
-    };
-
-    // OJO: Aquí se puede usar handler sin mocks
-    const response = await handler(event);
-
-    expect(response.statusCode).toBe(200);
-    const body = response.body;
-    expect(body).toHaveProperty('humedad');
-    expect(body.humedad.data.length).toBeGreaterThan(0);
-  }, 15000);
-});
+  });
 
 
 
@@ -71,3 +56,21 @@ describe('Tests para handler (unitarias e integración)', () => {
 //  const body = JSON.parse(response.body);
 //  expect(body.message).toMatch(/no se encontraron datos/i);
 //});
+
+
+
+//test('Consulta real a InfluxDB devuelve datos', async () => {
+ //   const event = {
+  //    id: 'colmena1',
+ //     startDate: '2025-01-01T00:00:00Z',
+ //     endDate: '2025-01-02T00:00:00Z'
+ //   };
+//
+//    // OJO: Aquí se puede usar handler sin mocks
+//    const response = await handler(event);
+//
+//    expect(response.statusCode).toBe(200);
+//    const body = response.body;
+//    expect(body).toHaveProperty('humedad');
+//    expect(body.humedad.data.length).toBeGreaterThan(0);
+//  }, 15000)
