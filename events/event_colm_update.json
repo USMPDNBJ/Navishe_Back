@@ -1,6 +1,13 @@
 {
   "pathParameters": {
-    "id": "69"
+    "id": "17"
   },
-  "body": "{\"nombre\": \"Colmena 5\", \"fecha_instalacion\": \"2025-01-01 00:00:00.000\", \"imagen_url\": \"https://example.com/imagen.jpg\", \"id_sensores\": \"1\"}"
+  "body": {
+    "nombre": "Colmena 2",
+    "fecha_instalacion": "2025-01-01 00:00:00.000",
+    "imagen_url": "https://example.com/imagen.jpg",
+    "id_sensores": "1",
+    "longitud": -76.95012,
+    "latitud": -12.10434
+  }
 }

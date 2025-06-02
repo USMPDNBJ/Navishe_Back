@@ -1,4 +1,4 @@
 {
-  "pathParameters": {     "id": "1"   },
+  "body": "{\"id_trabajador\": 94}",
   "httpMethod": "POST"
 }

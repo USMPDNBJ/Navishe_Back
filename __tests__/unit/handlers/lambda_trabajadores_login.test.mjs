@@ -1,145 +1,130 @@
 import { jest } from '@jest/globals';
-import sql from 'mssql';
-import { handler } from '../../../src/functions/LoginTrabajadorFunction/lambda_trabajadores_login.mjs';
+import { handler } from '../../../src/functions/trabajadorLoginFunction/lambda_trabajadores_login.mjs';
+import mysql from 'mysql2/promise';
 
-describe('lambda_trabajadores_login', () => {
+// Configuración real de la base de datos
+const dbConfig = {
+  host: 'bd-mysql-na-vishe.csbswo6i0muu.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'Vishe-1234',
+  database: 'bd-na-vishe-test',
+  port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+};
+
+describe('lambda_trabajadores_login - Pruebas de Integración Real', () => {
   let pool;
+  let connection;
 
-  // Configurar conexión y verificar tabla antes de las pruebas
+  // Configuración inicial - crear datos de prueba
   beforeAll(async () => {
-    try {
-      pool = await sql.connect({
-       user: 'NVS',
-      password: '@Vishe1234',
-      server: '161.132.55.86',
-      database: 'BD_NA_VISHE_PRUEBAS',// Reemplaza con el nombre de tu base de datos
-        options: {
-          encrypt: false,
-          trustServerCertificate: true,
-        },
-      });
-      // Verificar si la tabla t_trabajador existe, crearla si es necesario
-      await pool.request().query(`
-        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 't_trabajador')
-        CREATE TABLE t_trabajador (
-          correo VARCHAR(255),
-          contrasena VARCHAR(255),
-          rol VARCHAR(50)
-        )
-      `);
-    } catch (error) {
-      console.error('Error conectando a la base de datos o creando la tabla:', error);
-      throw error;
-    }
-  });
-
-  // Limpiar y preparar datos después de cada prueba
-  afterEach(async () => {
-    if (!pool || pool._connected === false) {
-      pool = await sql.connect({
-        user: 'NVS',
-      password: '@Vishe1234',
-      server: '161.132.55.86',
-      database: 'BD_NA_VISHE_PRUEBAS',
-        options: {
-          encrypt: false,
-          trustServerCertificate: true,
-        },
-      });
-    }
-    await pool.request().query('DELETE FROM t_trabajador');
-    await pool.request().query(`
-      INSERT INTO t_trabajador (correo, contrasena, rol)
-      VALUES ('admin@vishe.com', '123456', 'admin')
+    pool = mysql.createPool(dbConfig);
+    connection = await pool.getConnection();
+    
+    // Insertar usuario de prueba
+    await connection.execute(`
+      INSERT INTO t_trabajador 
+      (correo, nombre, contrasena, rol, status, dni) 
+      VALUES 
+      ('test_login@vishe.com', 'Usuario Prueba Login', 'testpass123', 'admin', 1, '99999999')
     `);
   });
 
-  // Cerrar conexión después de todas las pruebas
+  // Limpieza - eliminar datos de prueba
   afterAll(async () => {
-    if (pool && pool._connected) {
-      await pool.close();
-    }
+    await connection.execute(`
+      DELETE FROM t_trabajador 
+      WHERE correo = 'test_login@vishe.com'
+    `);
+    connection.release();
+    await pool.end();
   });
 
-  it('debería retornar rol si el login es exitoso', async () => {
-    const event = {
-      httpMethod: 'POST',
-      body: JSON.stringify({
-        correo: 'admin@vishe.com',
-        contrasena: '123456',
-      }),
-    };
-
-    const response = await handler(event);
-
-    expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual({ rol: 'admin' });
-  });
-
-  it('debería retornar 401 si las credenciales son incorrectas', async () => {
-    const event = {
-      httpMethod: 'POST',
-      body: JSON.stringify({
-        correo: 'fake@vishe.com',
-        contrasena: 'wrongpass',
-      }),
-    };
-
-    const response = await handler(event);
-
-    expect(response.statusCode).toBe(401);
-    expect(JSON.parse(response.body)).toEqual({ message: 'Credenciales incorrectas' });
-  });
-
-  it('debería retornar 400 si faltan campos requeridos', async () => {
-    const event = {
-      httpMethod: 'POST',
-      body: JSON.stringify({
-        correo: 'incompleto@vishe.com',
-      }),
-    };
-
-    const response = await handler(event);
-
-    expect(response.statusCode).toBe(400);
-    expect(JSON.parse(response.body)).toEqual({
-      message: 'Faltan campos requeridos: correo o contraseña',
+  describe('Método OPTIONS', () => {
+    it('debe responder correctamente a OPTIONS para CORS', async () => {
+      const event = { httpMethod: 'OPTIONS' };
+      const response = await handler(event);
+      
+      expect(response).toEqual({
+        statusCode: 200,
+        headers: expect.objectContaining({
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS"
+        }),
+        body: JSON.stringify({})
+      });
     });
   });
 
-  it('debería retornar 500 si ocurre un error en la base de datos', async () => {
-    // Cerrar la conexión para simular un error
-     const originalConnect = sql.connect;
-  sql.connect = jest.fn().mockRejectedValue(new Error('Error de conexión simulado'));
-
-  const event = {
-    httpMethod: 'POST',
-    body: JSON.stringify({
-      correo: 'admin@vishe.com',
-      contrasena: '123456',
-      }),
-    };
-
-   const response = await handler(event);
-
-  expect(response.statusCode).toBe(500);
-  expect(JSON.parse(response.body)).toEqual({
-    message: 'Error interno al validar login',
-    error: 'Error de conexión simulado'
-     });
-
-    // Reconectar para otras pruebas
-    if (!pool || pool._connected === false) {
-      pool = await sql.connect({
-       user: 'NVS',
-      password: '@Vishe1234',
-      server: '161.132.55.86',
-      database: 'BD_NA_VISHE_PRUEBAS',
-        options: {
-          encrypt: false,
-          trustServerCertificate: true,
-        },
+  describe('Validación de métodos HTTP', () => {
+    it('debe rechazar métodos distintos a POST con 405', async () => {
+      const event = { httpMethod: 'GET', body: JSON.stringify({}) };
+      const response = await handler(event);
+      
+      expect(response.statusCode).toBe(405);
+      expect(JSON.parse(response.body)).toEqual({
+        message: 'Método no permitido'
       });
-    }
+    });
   });
+
+  describe('Validación de campos', () => {
+    it('debe requerir correo y contraseña', async () => {
+      const testCases = [
+        { correo: null, contrasena: 'pass123' },
+        { correo: 'test@mail.com', contrasena: null },
+        { correo: null, contrasena: null }
+      ];
+
+      for (const testCase of testCases) {
+        const event = {
+          httpMethod: 'POST',
+          body: JSON.stringify(testCase)
+        };
+        
+        const response = await handler(event);
+        expect(response.statusCode).toBe(400);
+      }
+    });
+  });
+
+  describe('Autenticación exitosa', () => {
+    it('debe retornar el rol cuando las credenciales son válidas', async () => {
+      const event = {
+        httpMethod: 'POST',
+        body: JSON.stringify({
+          correo: 'test_login@vishe.com',
+          contrasena: 'testpass123'
+        })
+      };
+
+      const response = await handler(event);
+      
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({
+        rol: 'admin'
+      });
+    });
+  });
+
+  describe('Credenciales inválidas', () => {
+    it('debe retornar 401 cuando las credenciales son incorrectas', async () => {
+      const event = {
+        httpMethod: 'POST',
+        body: JSON.stringify({
+          correo: 'test_login@vishe.com',
+          contrasena: 'contrasena_incorrecta'
+        })
+      };
+
+      const response = await handler(event);
+      
+      expect(response.statusCode).toBe(401);
+      expect(JSON.parse(response.body)).toEqual({
+        message: 'Credenciales incorrectas'
+      });
+    });
+  });  
 });

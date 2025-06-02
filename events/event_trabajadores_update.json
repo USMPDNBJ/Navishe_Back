@@ -1,6 +1,17 @@
 {
+  "httpMethod": "PUT",
   "body": "{ \"correo\": \"nuevo@mail.com\", \"nombre\": \"Juan Actualizado\", \"contrasena\": \"12345678\", \"rol\": \"admin\", \"status\": \"1\", \"dni\": \"87654321\" }",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer token_valido"
+  },
   "pathParameters": {
-    "id": "12"
+    "id": "6"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "http": {
+      "method": "PUT"
+    }
   }
 }
