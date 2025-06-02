@@ -1,6 +1,6 @@
 {
-  "name": "conexion_db",
-  "description": "delete-test-01-description",
+  "name": "colm_sensores_historica",
+  "description": "colm_sensores_historica-description",
   "version": "0.0.1",
   "private": true,
   "dependencies": {

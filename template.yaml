@@ -234,6 +234,24 @@ Resources:
               Path: /sensores/{id}
               Method: GET
 
+  colmSensoresHistoricaFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: lambda_colm_sensores_historica.handler
+        Runtime: nodejs22.x
+        CodeUri: src/functions/colmSensoresHistoricaFunction
+        Architectures:
+          - x86_64
+        MemorySize: 128
+        Timeout: 100
+        Description: LAMBDA PARA OBTENER TODOS LOS DATOS HISTORICOS DE INFLUXDB
+        Events:
+          Api:
+            Type: Api
+            Properties:
+              Path: /sensores/historica
+              Method: GET
+
 
 
   ApplicationResourceGroup:
