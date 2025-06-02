@@ -1,7 +1,7 @@
 // hello-world/app.test.mjs
 import { jest } from '@jest/globals';
 import mysql from 'mysql2/promise';
-import { handler } from '../../../../Navishe_Back/src/functions/cameraFindId/lambda_camera_find_id.mjs';
+import { handler } from '../../../src/functions/camFindIdFunction/lambda_cam_find_id.mjs';
 
 // Mock de mysql2/promise
 jest.mock('mysql2/promise');
